@@ -12,7 +12,7 @@ Quick-reference cheat sheet for all CLI commands organized by category.
 | `cp .env.example .env` | Create root env file |
 | `cp apps/auth-service/.env.example apps/auth-service/.env` | Create auth env file |
 | `cp apps/license-service/.env.example apps/license-service/.env` | Create license env file |
-| `createdb ix_db` | Create the database |
+| `createdb arc_db` | Create the database |
 | `pnpm nx run-many --target=prisma:generate` | Generate Prisma client for all services |
 | `pnpm nx run-many --target=prisma:migrate:deploy` | Run all migrations |
 
@@ -70,8 +70,8 @@ Quick-reference cheat sheet for all CLI commands organized by category.
 
 | Command | Description |
 |---------|-------------|
-| `dropdb ix_db && createdb ix_db` | Drop and recreate database |
-| `dropdb ix_db && createdb ix_db && pnpm nx run-many --target=prisma:migrate:deploy` | Full reset with migrations |
+| `dropdb arc_db && createdb arc_db` | Drop and recreate database |
+| `dropdb arc_db && createdb arc_db && pnpm nx run-many --target=prisma:migrate:deploy` | Full reset with migrations |
 
 ---
 
@@ -82,10 +82,10 @@ Quick-reference cheat sheet for all CLI commands organized by category.
 | `brew services start postgresql@15` | Start PostgreSQL (macOS) |
 | `brew services stop postgresql@15` | Stop PostgreSQL (macOS) |
 | `pg_isready` | Check if PostgreSQL is running |
-| `psql ix_db` | Connect to database |
-| `psql -l \| grep ix_db` | Check if database exists |
-| `createdb ix_db` | Create database |
-| `dropdb ix_db` | Drop database |
+| `psql arc_db` | Connect to database |
+| `psql -l \| grep arc_db` | Check if database exists |
+| `createdb arc_db` | Create database |
+| `dropdb arc_db` | Drop database |
 
 ---
 
@@ -228,7 +228,7 @@ DATABASE_URL=postgresql://... npx tsx tools/generate-license-file.ts <TENANT_ID>
 ### Generate License (via curl -- alternative)
 
 ```bash
-curl -X POST http://localhost:4005/on-prem/license \
+curl -X POST http://localhost:6005/on-prem/license \
   -H "Content-Type: application/json" \
   -d '{"tenantId": 8, "cycle":"ANNUALLY"}' \
   -o license.lic
@@ -237,7 +237,7 @@ curl -X POST http://localhost:4005/on-prem/license \
 ### Check License Status
 
 ```bash
-curl http://localhost:4005/on-prem/license/status
+curl http://localhost:6005/on-prem/license/status
 ```
 
 ---
@@ -269,11 +269,11 @@ rm -rf .nx
 rm -rf tools/keys/
 
 # Drop database
-dropdb ix_db
+dropdb arc_db
 
 # Re-install
 pnpm install
-createdb ix_db
+createdb arc_db
 pnpm nx run-many --target=prisma:generate
 pnpm nx run-many --target=prisma:migrate:deploy
 ```
@@ -284,16 +284,16 @@ pnpm nx run-many --target=prisma:migrate:deploy
 
 | Service / Tool | Port |
 |---------------|------|
-| auth-service (TCP) | 3001 |
-| auth-service (HTTP) | 4001 |
-| audit-service (TCP) | 3002 |
-| audit-service (HTTP) | 4002 |
-| tenant-service (TCP) | 3003 |
-| tenant-service (HTTP) | 4003 |
-| users-service (TCP) | 3004 |
-| users-service (HTTP) | 4004 |
-| license-service (TCP) | 3005 |
-| license-service (HTTP) | 4005 |
+| auth-service (TCP) | 5001 |
+| auth-service (HTTP) | 6001 |
+| audit-service (TCP) | 5002 |
+| audit-service (HTTP) | 6002 |
+| tenant-service (TCP) | 5003 |
+| tenant-service (HTTP) | 6003 |
+| users-service (TCP) | 5004 |
+| users-service (HTTP) | 6004 |
+| license-service (TCP) | 5005 |
+| license-service (HTTP) | 6005 |
 | PostgreSQL | 5432 |
 | Redis | 6379 |
 | Prisma Studio | 5555 |
@@ -304,11 +304,11 @@ pnpm nx run-many --target=prisma:migrate:deploy
 
 | URL | Service |
 |-----|---------|
-| http://localhost:4001/health | auth-service |
-| http://localhost:4002/health | audit-service |
-| http://localhost:4003/health | tenant-service |
-| http://localhost:4004/health | users-service |
-| http://localhost:4005/health | license-service |
+| http://localhost:6001/health | auth-service |
+| http://localhost:6002/health | audit-service |
+| http://localhost:6003/health | tenant-service |
+| http://localhost:6004/health | users-service |
+| http://localhost:6005/health | license-service |
 
 ---
 
@@ -316,10 +316,10 @@ pnpm nx run-many --target=prisma:migrate:deploy
 
 | URL | Service |
 |-----|---------|
-| http://localhost:4001/api | auth-service |
-| http://localhost:4002/api | audit-service |
-| http://localhost:4003/api | tenant-service |
-| http://localhost:4004/api | users-service |
-| http://localhost:4005/api | license-service |
+| http://localhost:6001/api | auth-service |
+| http://localhost:6002/api | audit-service |
+| http://localhost:6003/api | tenant-service |
+| http://localhost:6004/api | users-service |
+| http://localhost:6005/api | license-service |
 
 Swagger is only available when `NODE_ENV !== 'production'`.

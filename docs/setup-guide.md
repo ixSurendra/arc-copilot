@@ -57,7 +57,7 @@ cp apps/license-service/.env.example apps/license-service/.env
 Edit `.env` and set:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ix_db?schema=public
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/arc_db?schema=public
 ```
 
 ### 4. Start PostgreSQL
@@ -73,7 +73,7 @@ pg_isready
 ### 5. Create the Database
 
 ```bash
-createdb ix_db
+createdb arc_db
 ```
 
 All 5 services share this single database (each service has its own tables via separate Prisma schemas).
@@ -92,7 +92,7 @@ This reads each service's `prisma/schema.prisma` and generates TypeScript types 
 pnpm nx run-many --target=prisma:migrate:deploy
 ```
 
-This creates all 29 tables in `ix_db` by running the migration files from each service's `prisma/migrations/` folder.
+This creates all 29 tables in `arc_db` by running the migration files from each service's `prisma/migrations/` folder.
 
 ### 8. Start Redis (for license-service)
 
@@ -119,11 +119,11 @@ Open in browser:
 
 | Service | Swagger UI | Health |
 |---------|-----------|--------|
-| Auth | http://localhost:4001/api | http://localhost:4001/health |
-| Audit | http://localhost:4002/api | http://localhost:4002/health |
-| Tenant | http://localhost:4003/api | http://localhost:4003/health |
-| Users | http://localhost:4004/api | http://localhost:4004/health |
-| License | http://localhost:4005/api | http://localhost:4005/health |
+| Auth | http://localhost:6001/api | http://localhost:6001/health |
+| Audit | http://localhost:6002/api | http://localhost:6002/health |
+| Tenant | http://localhost:6003/api | http://localhost:6003/health |
+| Users | http://localhost:6004/api | http://localhost:6004/health |
+| License | http://localhost:6005/api | http://localhost:6005/health |
 
 ---
 
@@ -153,8 +153,8 @@ rm -rf .nx
 rm -rf tools/keys/
 
 # 7. Drop and recreate database
-dropdb ix_db
-createdb ix_db
+dropdb arc_db
+createdb arc_db
 
 # 8. Re-install from scratch
 pnpm install
@@ -173,10 +173,10 @@ pnpm nx run-many --target=prisma:migrate:deploy
 pg_isready
 
 # Check if database exists
-psql -l | grep ix_db
+psql -l | grep arc_db
 
 # Connect to database
-psql ix_db
+psql arc_db
 
 # List tables (inside psql)
 \dt
@@ -220,6 +220,6 @@ Redis is not running. Start it with `brew services start redis`. Only affects li
 Another process is using the port. Find and kill it:
 
 ```bash
-lsof -i :4003    # Find process using port 4003
+lsof -i :6003    # Find process using port 6003
 kill -9 <PID>    # Kill it
 ```

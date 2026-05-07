@@ -8,8 +8,8 @@ The tenant service manages tenant lifecycle, subscription plans, billing records
 
 | Transport  | Address               | Port   |
 |------------|-----------------------|--------|
-| TCP (RPC)  | `0.0.0.0`             | `3003` |
-| HTTP       | `http://localhost`    | `4003` |
+| TCP (RPC)  | `0.0.0.0`             | `5003` |
+| HTTP       | `http://localhost`    | `6003` |
 
 The constants are exported from `@arc/shared`:
 
@@ -173,15 +173,15 @@ import {
 |----------------------------|----------|---------------|-------------------------------|
 | `DATABASE_URL`             | Yes      | --            | PostgreSQL connection string  |
 | `NODE_ENV`                 | No       | `development` | Runtime environment           |
-| `TENANT_SERVICE_PORT`      | No       | `3003`        | TCP microservice port         |
-| `TENANT_SERVICE_HTTP_PORT` | No       | `4003`        | HTTP server port              |
+| `TENANT_SERVICE_PORT`      | No       | `5003`        | TCP microservice port         |
+| `TENANT_SERVICE_HTTP_PORT` | No       | `6003`        | HTTP server port              |
 
 ---
 
 ## Health Check
 
 ```
-GET http://localhost:4003/health
+GET http://localhost:6003/health
 ```
 
 Returns `200 OK` when the service and its database connection are healthy.
@@ -193,5 +193,5 @@ Returns `200 OK` when the service and its database connection are healthy.
 When `NODE_ENV !== 'production'` the interactive API docs are available at:
 
 ```
-http://localhost:4003/api
+http://localhost:6003/api
 ```

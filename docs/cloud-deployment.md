@@ -52,7 +52,7 @@ Same variables as local/Docker, but stored in the cloud platform's secrets manag
 |----------|-------|--------|
 | `NODE_ENV` | `production` | Task definition |
 | `ON_PREM` | `false` | Task definition |
-| `DATABASE_URL` | `postgresql://user:pass@rds-endpoint:5432/ix_db` | Secrets Manager |
+| `DATABASE_URL` | `postgresql://user:pass@rds-endpoint:5432/arc_db` | Secrets Manager |
 | `JWT_SECRET` | `<strong-random-secret>` | Secrets Manager |
 | `JWT_EXPIRATION` | `15m` | Task definition |
 | `JWT_REFRESH_EXPIRATION_DAYS` | `7` | Task definition |
@@ -114,7 +114,7 @@ Update the container images in the cloud platform (ECS task definition, K8s depl
 | `services: migrate` | CI/CD pipeline step or init container |
 | `services: tenant-service` | ECS Service / K8s Deployment |
 | `env_file: .env.docker` | Secrets Manager + task definition |
-| `ports: '4003:4003'` | Load Balancer target group |
+| `ports: '6003:6003'` | Load Balancer target group |
 | `depends_on` | Service discovery + health checks |
 | `volumes: pgdata` | Managed storage (automatic) |
 | `restart: unless-stopped` | Platform auto-restart (built-in) |

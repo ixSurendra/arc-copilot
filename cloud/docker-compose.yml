@@ -76,8 +76,8 @@ services:
       ON_PREM: 'false'
       USERS_SERVICE_HOST: users-service
     ports:
-      - '4003:4003' # HTTP
-      - '3003:3003' # TCP
+      - '6003:6003' # HTTP
+      - '5003:5003' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -94,8 +94,8 @@ services:
       TENANT_SERVICE_HOST: tenant-service
       LICENSE_SERVICE_HOST: license-service
     ports:
-      - '4004:4004' # HTTP
-      - '3004:3004' # TCP
+      - '6004:6004' # HTTP
+      - '5004:5004' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -108,8 +108,8 @@ services:
       NODE_ENV: production
       ON_PREM: 'false'
     ports:
-      - '4002:4002' # HTTP
-      - '3002:3002' # TCP
+      - '6002:6002' # HTTP
+      - '5002:5002' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -128,8 +128,8 @@ services:
       TENANT_SERVICE_HOST: tenant-service
       AUDIT_SERVICE_HOST: audit-service
     ports:
-      - '4001:4001' # HTTP
-      - '3001:3001' # TCP
+      - '6001:6001' # HTTP
+      - '5001:5001' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -152,8 +152,8 @@ services:
       TENANT_SERVICE_HOST: tenant-service
       AUDIT_SERVICE_HOST: audit-service
     ports:
-      - '4005:4005' # HTTP
-      - '3005:3005' # TCP
+      - '6005:6005' # HTTP
+      - '5005:5005' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -180,8 +180,8 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@example.com}
     ports:
-      - '4006:4006' # HTTP
-      - '3006:3006' # TCP
+      - '6006:6006' # HTTP
+      - '5006:5006' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -203,7 +203,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      BFF_INTERNAL_URL: http://admin-portal:4006
+      BFF_INTERNAL_URL: http://admin-portal:6006
     ports:
       - '3000:3000'
     depends_on:

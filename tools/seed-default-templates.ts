@@ -17,7 +17,7 @@
  * is fully idempotent — safe to run multiple times.
  *
  * Usage:
- *   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ix_db npx tsx tools/seed-default-templates.ts
+ *   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/arc_db npx tsx tools/seed-default-templates.ts
  *
  * Environment variables:
  *   DATABASE_URL          — PostgreSQL connection string (required)

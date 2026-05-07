@@ -39,7 +39,7 @@ Edit `.env.docker` and set:
 
 ```env
 NODE_ENV=development
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ix_db?schema=public
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/arc_db?schema=public
 JWT_SECRET=your-docker-jwt-secret
 JWT_EXPIRATION=15m
 JWT_REFRESH_EXPIRATION_DAYS=7
@@ -71,7 +71,7 @@ docker compose ps
 docker compose logs -f
 
 # Test Swagger
-open http://localhost:4003/api
+open http://localhost:6003/api
 ```
 
 ---
@@ -191,7 +191,7 @@ docker compose up -d
 
 | Service | Image | Port | Purpose |
 |---------|-------|------|---------|
-| postgres | postgres:15-alpine | 5432 | Database (ix_db) |
+| postgres | postgres:15-alpine | 5432 | Database (arc_db) |
 | redis | redis:7-alpine | 6379 | Cache for license-service |
 
 ### Migrate (runs once, then exits)
@@ -204,11 +204,11 @@ docker compose up -d
 
 | Service | HTTP | TCP | Special Config |
 |---------|------|-----|----------------|
-| tenant-service | 4003 | 3003 | - |
-| users-service | 4004 | 3004 | - |
-| audit-service | 4002 | 3002 | - |
-| auth-service | 4001 | 3001 | TCP hosts for users + tenant, JWT from env |
-| license-service | 4005 | 3005 | Redis host, ON_PREM flag, TCP hosts |
+| tenant-service | 6003 | 5003 | - |
+| users-service | 6004 | 5004 | - |
+| audit-service | 6002 | 5002 | - |
+| auth-service | 6001 | 5001 | TCP hosts for users + tenant, JWT from env |
+| license-service | 6005 | 5005 | Redis host, ON_PREM flag, TCP hosts |
 
 ---
 
@@ -220,7 +220,7 @@ Variables come from two sources:
 
 ```env
 NODE_ENV=development
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ix_db?schema=public
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/arc_db?schema=public
 JWT_SECRET=your-secret
 ```
 
@@ -245,8 +245,8 @@ Inside Docker Compose, containers connect by **service name**, not `localhost`:
 |-------|--------|
 | `localhost:5432` | `postgres:5432` |
 | `localhost:6379` | `redis:6379` |
-| `localhost:3003` (tenant TCP) | `tenant-service:3003` |
-| `localhost:3004` (users TCP) | `users-service:3004` |
+| `localhost:5003` (tenant TCP) | `tenant-service:5003` |
+| `localhost:5004` (users TCP) | `users-service:5004` |
 
 This is why services have `*_SERVICE_HOST` env vars — they resolve to container names in Docker but default to `localhost` for local development.
 

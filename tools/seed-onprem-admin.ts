@@ -14,7 +14,7 @@
  *   8. Seeds default email templates (global defaults for tenantId=0)
  *
  * Usage (on the customer's machine):
- *   DATABASE_URL=postgresql://postgres:<password>@localhost:5432/ix_db node seed-onprem-admin.js
+ *   DATABASE_URL=postgresql://postgres:<password>@localhost:5432/arc_db node seed-onprem-admin.js
  *
  * Environment variables:
  *   DATABASE_URL          — PostgreSQL connection string (required)

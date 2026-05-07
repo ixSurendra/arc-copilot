@@ -27,7 +27,7 @@ Complete reference of all environment variables used across all deployment modes
 
 | Variable | Description | Example | Used By |
 |----------|-------------|---------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:postgres@localhost:5432/ix_db?schema=public` | All services |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:postgres@localhost:5432/arc_db?schema=public` | All services |
 | `POSTGRES_PASSWORD` | PostgreSQL password (Docker only) | `postgres` | docker-compose postgres container |
 
 ### Authentication (auth-service)
@@ -85,7 +85,7 @@ Source: `.env` (root) + `apps/<service>/.env`
 
 ```env
 # .env (root)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ix_db?schema=public
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/arc_db?schema=public
 
 # apps/auth-service/.env
 JWT_SECRET=dev-secret
@@ -106,7 +106,7 @@ Source: `.env.docker`
 
 ```env
 NODE_ENV=development
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ix_db?schema=public
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/arc_db?schema=public
 JWT_SECRET=docker-jwt-secret-change-in-production
 JWT_EXPIRATION=15m
 JWT_REFRESH_EXPIRATION_DAYS=7
@@ -128,7 +128,7 @@ Source: `.env.onprem`
 
 ```env
 POSTGRES_PASSWORD=<strong-password>
-DATABASE_URL=postgresql://postgres:<password>@postgres:5432/ix_db?schema=public
+DATABASE_URL=postgresql://postgres:<password>@postgres:5432/arc_db?schema=public
 JWT_SECRET=<strong-secret>
 JWT_EXPIRATION=15m
 JWT_REFRESH_EXPIRATION_DAYS=7
@@ -156,7 +156,7 @@ Source: Cloud Secrets Manager + task definitions
 ```
 NODE_ENV=production
 ON_PREM=false
-DATABASE_URL=postgresql://user:pass@rds-endpoint:5432/ix_db
+DATABASE_URL=postgresql://user:pass@rds-endpoint:5432/arc_db
 JWT_SECRET=<from-secrets-manager>
 JWT_EXPIRATION=15m
 JWT_REFRESH_EXPIRATION_DAYS=7

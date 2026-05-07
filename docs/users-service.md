@@ -8,8 +8,8 @@ The users service manages user accounts, roles, groups, modules, and permissions
 
 | Transport  | Address            | Port   |
 |------------|--------------------|--------|
-| TCP (RPC)  | `0.0.0.0`          | `3004` |
-| HTTP       | `http://localhost`  | `4004` |
+| TCP (RPC)  | `0.0.0.0`          | `5004` |
+| HTTP       | `http://localhost`  | `6004` |
 
 ---
 

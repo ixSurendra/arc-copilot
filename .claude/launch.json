@@ -12,37 +12,37 @@
       "name": "auth-service",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["nx", "serve", "auth-service"],
-      "port": 4001
+      "port": 6001
     },
     {
       "name": "audit-service",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["nx", "serve", "audit-service"],
-      "port": 4002
+      "port": 6002
     },
     {
       "name": "tenant-service",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["nx", "serve", "tenant-service"],
-      "port": 4003
+      "port": 6003
     },
     {
       "name": "users-service",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["nx", "serve", "users-service"],
-      "port": 4004
+      "port": 6004
     },
     {
       "name": "license-service",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["nx", "serve", "license-service"],
-      "port": 4005
+      "port": 6005
     },
     {
       "name": "admin-portal",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["nx", "serve", "admin-portal"],
-      "port": 4006
+      "port": 6006
     }
   ]
 }

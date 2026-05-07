@@ -4,7 +4,7 @@ import { routing } from './i18n/routing';
 
 const intlMiddleware = createMiddleware(routing);
 
-const BFF_URL = process.env.BFF_INTERNAL_URL || 'http://localhost:4006';
+const BFF_URL = process.env.BFF_INTERNAL_URL || 'http://localhost:6006';
 
 /**
  * Decode a JWT and return its payload (without verification).

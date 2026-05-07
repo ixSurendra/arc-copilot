@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BFF_URL = process.env.BFF_INTERNAL_URL || 'http://localhost:4006';
+const BFF_URL = process.env.BFF_INTERNAL_URL || 'http://localhost:6006';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();

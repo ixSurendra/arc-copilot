@@ -39,7 +39,7 @@ export class SsoController {
   }
 
   private get callbackBaseUrl(): string {
-    return this.configService.get<string>('SSO_CALLBACK_BASE_URL') || 'http://localhost:4001';
+    return this.configService.get<string>('SSO_CALLBACK_BASE_URL') || 'http://localhost:6001';
   }
 
   // ─── Google OAuth ────────────────────────────────────

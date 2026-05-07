@@ -213,7 +213,7 @@ MailService.sendTemplatedEmail()
 Run the standalone seed script:
 
 ```bash
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ix_db npx tsx tools/seed-default-templates.ts
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/arc_db npx tsx tools/seed-default-templates.ts
 ```
 
 This seeds:
@@ -233,7 +233,7 @@ No separate script is needed for on-prem -- it runs automatically as part of the
 
 ## On-Prem Considerations
 
-- On-prem deployments use a single shared database (`ix_db`), so all service tables are accessible from one `DATABASE_URL`
+- On-prem deployments use a single shared database (`arc_db`), so all service tables are accessible from one `DATABASE_URL`
 - The on-prem seed script creates both a global default branding and a tenant-specific branding entry, so the customer's organization name appears in emails immediately
 - SMTP configuration is required for email delivery (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`)
 - Templates reference the `APP_URL` environment variable for login/reset URLs

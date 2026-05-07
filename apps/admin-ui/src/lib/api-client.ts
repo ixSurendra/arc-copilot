@@ -1,4 +1,4 @@
-const BFF_URL = process.env.BFF_INTERNAL_URL || 'http://localhost:4006';
+const BFF_URL = process.env.BFF_INTERNAL_URL || 'http://localhost:6006';
 
 export class ApiError extends Error {
   constructor(

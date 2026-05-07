@@ -74,11 +74,11 @@ All reusable code lives here. Services import via `@arc/shared`.
 ### 4.1 Constants (`constants/services.ts`)
 
 ```
-AUTH_SERVICE       = 'AUTH_SERVICE'        TCP: 3001   HTTP: 4001
-AUDIT_SERVICE      = 'AUDIT_SERVICE'       TCP: 3002   HTTP: 4002
-TENANT_SERVICE     = 'TENANT_SERVICE'      TCP: 3003   HTTP: 4003
-USERS_SERVICE      = 'USERS_SERVICE'       TCP: 3004   HTTP: 4004
-LICENSE_SERVICE    = 'LICENSE_SERVICE'      TCP: 3005   HTTP: 4005
+AUTH_SERVICE       = 'AUTH_SERVICE'        TCP: 5001   HTTP: 6001
+AUDIT_SERVICE      = 'AUDIT_SERVICE'       TCP: 5002   HTTP: 6002
+TENANT_SERVICE     = 'TENANT_SERVICE'      TCP: 5003   HTTP: 6003
+USERS_SERVICE      = 'USERS_SERVICE'       TCP: 5004   HTTP: 6004
+LICENSE_SERVICE    = 'LICENSE_SERVICE'      TCP: 5005   HTTP: 6005
 ```
 
 ### 4.2 Enums (17 total)
@@ -145,7 +145,7 @@ Plus interfaces for every domain entity (Tenant, User, Role, Group, AuditLog, Pl
 
 ## 5. Microservices — Detailed
 
-### 5.1 Tenant Service (TCP: 3003, HTTP: 4003)
+### 5.1 Tenant Service (TCP: 5003, HTTP: 6003)
 
 Manages tenant lifecycle, billing, invoices, and plan history.
 
@@ -237,7 +237,7 @@ Manages tenant lifecycle, billing, invoices, and plan history.
 
 ---
 
-### 5.2 Users Service (TCP: 3004, HTTP: 4004)
+### 5.2 Users Service (TCP: 5004, HTTP: 6004)
 
 Manages users, roles, groups, modules, and permissions. Implements RBAC (Role-Based Access Control).
 
@@ -386,7 +386,7 @@ Group (tenant-scoped) → GroupRole (group has roles), UserGroup (user in groups
 
 ---
 
-### 5.3 Auth Service (TCP: 3001, HTTP: 4001)
+### 5.3 Auth Service (TCP: 5001, HTTP: 6001)
 
 Handles authentication, JWT tokens, credentials, MFA, and per-tenant auth configuration.
 
@@ -498,7 +498,7 @@ Handles authentication, JWT tokens, credentials, MFA, and per-tenant auth config
 
 ---
 
-### 5.4 Audit Service (TCP: 3002, HTTP: 4002)
+### 5.4 Audit Service (TCP: 5002, HTTP: 6002)
 
 Central event log for the platform. Other services emit fire-and-forget events.
 
@@ -545,7 +545,7 @@ Central event log for the platform. Other services emit fire-and-forget events.
 
 ---
 
-### 5.5 License Service (TCP: 3005, HTTP: 4005)
+### 5.5 License Service (TCP: 5005, HTTP: 6005)
 
 Manages plans, features, quotas, pricing, usage metering, and on-prem licensing.
 
@@ -697,7 +697,7 @@ TCP hosts are configurable via env vars (`USERS_SERVICE_HOST`, `TENANT_SERVICE_H
 
 ## 7. Database Architecture
 
-All 5 services share a **single PostgreSQL database** (`ix_db`) with **29 tables total**. Each service has its own Prisma schema and migrations, but they all point to the same `DATABASE_URL`.
+All 5 services share a **single PostgreSQL database** (`arc_db`) with **29 tables total**. Each service has its own Prisma schema and migrations, but they all point to the same `DATABASE_URL`.
 
 | Service | Tables |
 |---------|--------|

@@ -18,13 +18,13 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ix_db
+      POSTGRES_DB: arc_db
     ports:
-      - '5433:5432'
+      - '6433:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d ix_db']
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d arc_db']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -33,7 +33,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - '6380:6379'
+      - '7380:6379'
     volumes:
       - redisdata:/data
     healthcheck:
@@ -46,8 +46,8 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - '8025:8025' # Web UI
-      - '1025:1025' # SMTP
+      - '9025:8025' # Web UI
+      - '2025:1025' # SMTP
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
@@ -59,7 +59,7 @@ services:
       context: .
       target: source
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ix_db?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/arc_db?schema=public
     command: >
       sh -c "
         echo '── Running migrations for all services ──' &&
@@ -84,8 +84,8 @@ services:
     restart: unless-stopped
     env_file: .env.docker
     ports:
-      - '5003:4003' # HTTP (Swagger)
-      - '6003:3003' # TCP  (inter-service)
+      - '6003:6003' # HTTP (Swagger)
+      - '5003:5003' # TCP  (inter-service)
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -98,8 +98,8 @@ services:
     restart: unless-stopped
     env_file: .env.docker
     ports:
-      - '5004:4004' # HTTP
-      - '6004:3004' # TCP
+      - '6004:6004' # HTTP
+      - '5004:5004' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -112,8 +112,8 @@ services:
     restart: unless-stopped
     env_file: .env.docker
     ports:
-      - '5002:4002' # HTTP
-      - '6002:3002' # TCP
+      - '6002:6002' # HTTP
+      - '5002:5002' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -142,8 +142,8 @@ services:
       SMTP_PASS: dev
       SMTP_FROM: IX Platform <noreply@ix-copilot.local>
     ports:
-      - '5001:4001' # HTTP
-      - '6001:3001' # TCP
+      - '6001:6001' # HTTP
+      - '5001:5001' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -173,8 +173,8 @@ services:
       TENANT_SERVICE_HOST: tenant-service
       AUDIT_SERVICE_HOST: audit-service
     ports:
-      - '5005:4005' # HTTP
-      - '6005:3005' # TCP
+      - '6005:6005' # HTTP
+      - '5005:5005' # TCP
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -205,8 +205,8 @@ services:
       SMTP_PASS: dev
       SMTP_FROM: IX Platform <noreply@ix-copilot.local>
     ports:
-      - '5006:4006' # HTTP (Swagger)
-      - '6006:3006' # TCP  (inter-service)
+      - '6006:6006' # HTTP (Swagger)
+      - '5006:5006' # TCP  (inter-service)
     depends_on:
       tenant-service:
         condition: service_started
@@ -232,9 +232,9 @@ services:
     restart: unless-stopped
     environment:
       # BFF internal URL (Next.js server components call admin-portal directly)
-      BFF_INTERNAL_URL: http://admin-portal:4006
+      BFF_INTERNAL_URL: http://admin-portal:6006
     ports:
-      - '3100:3000' # Next.js
+      - '3200:3000' # Next.js
     depends_on:
       admin-portal:
         condition: service_started

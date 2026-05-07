@@ -419,8 +419,8 @@ The setup script does everything:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Admin UI:        http://localhost:3000
-  Admin Portal:    http://localhost:4006
-  License Status:  http://localhost:4005/on-prem/license/status
+  Admin Portal:    http://localhost:6006
+  License Status:  http://localhost:6005/on-prem/license/status
 
   Useful commands:
     docker compose logs -f              # View all logs
@@ -446,7 +446,7 @@ docker compose up -d postgres redis
 
 # 4. Wait for PostgreSQL to be ready
 echo "Waiting for database..."
-until docker compose exec -T postgres pg_isready -U postgres -d ix_db 2>/dev/null; do
+until docker compose exec -T postgres pg_isready -U postgres -d arc_db 2>/dev/null; do
   sleep 2
 done
 echo "Database ready!"
@@ -487,7 +487,7 @@ admin-ui                   Up
 **Health check all services:**
 
 ```bash
-for port in 4001 4002 4003 4004 4005 4006; do
+for port in 6001 6002 6003 6004 6005 6006; do
   echo -n "Port $port: "
   curl -sf http://localhost:$port/health | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])" 2>/dev/null || echo "not ready yet"
 done
@@ -496,18 +496,18 @@ done
 Expected output:
 
 ```
-Port 4001: ok       (auth-service)
-Port 4002: ok       (audit-service)
-Port 4003: ok       (tenant-service)
-Port 4004: ok       (users-service)
-Port 4005: ok       (license-service)
-Port 4006: ok       (admin-portal)
+Port 6001: ok       (auth-service)
+Port 6002: ok       (audit-service)
+Port 6003: ok       (tenant-service)
+Port 6004: ok       (users-service)
+Port 6005: ok       (license-service)
+Port 6006: ok       (admin-portal)
 ```
 
 **Check license status:**
 
 ```bash
-curl -s http://localhost:4005/on-prem/license/status | python3 -m json.tool
+curl -s http://localhost:6005/on-prem/license/status | python3 -m json.tool
 ```
 
 Expected:
@@ -530,7 +530,7 @@ Open a browser and navigate to:
 | URL | What |
 |-----|------|
 | `http://<server-ip>:3000` | Admin UI — main dashboard (login page) |
-| `http://<server-ip>:4005/on-prem/license/status` | License status (JSON) |
+| `http://<server-ip>:6005/on-prem/license/status` | License status (JSON) |
 
 - If accessing from the same machine: use `http://localhost:3000`
 - If accessing from another machine on the network: use the server's IP address
@@ -639,7 +639,7 @@ docker compose ps
 
 ```bash
 # Create a timestamped backup
-docker compose exec -T postgres pg_dump -U postgres ix_db > backup_$(date +%Y%m%d_%H%M%S).sql
+docker compose exec -T postgres pg_dump -U postgres arc_db > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Verify backup was created
 ls -lh backup_*.sql
@@ -653,7 +653,7 @@ head -20 backup_*.sql
 docker compose stop tenant-service users-service audit-service auth-service license-service admin-portal admin-ui
 
 # 2. Restore the backup
-cat backup_20260309_120000.sql | docker compose exec -T postgres psql -U postgres ix_db
+cat backup_20260309_120000.sql | docker compose exec -T postgres psql -U postgres arc_db
 
 # 3. Restart everything
 docker compose up -d
@@ -666,7 +666,7 @@ docker compose up -d
 docker system df
 
 # Database size
-docker compose exec -T postgres psql -U postgres -c "SELECT pg_size_pretty(pg_database_size('ix_db'));"
+docker compose exec -T postgres psql -U postgres -c "SELECT pg_size_pretty(pg_database_size('arc_db'));"
 
 # Host disk
 df -h
@@ -681,7 +681,7 @@ When you receive a new `license.lic` from the vendor:
 cp new-license.lic license/license.lic
 
 # Verify (the guard re-validates within 5 minutes automatically)
-curl -s http://localhost:4005/on-prem/license/status | python3 -m json.tool
+curl -s http://localhost:6005/on-prem/license/status | python3 -m json.tool
 
 # To force immediate validation, restart the license service:
 docker compose restart license-service
@@ -706,7 +706,7 @@ docker compose up -d
 
 # 5. Verify
 docker compose ps
-curl http://localhost:4005/on-prem/license/status
+curl http://localhost:6005/on-prem/license/status
 ```
 
 ### Reset Everything (DANGER: Deletes All Data)
@@ -823,7 +823,7 @@ Connects to the database, validates the tenant exists, reads the tenant's plan a
 **Option B — Via license-service API (needs running service with private key):**
 
 ```bash
-curl -X POST http://localhost:4005/on-prem/license \
+curl -X POST http://localhost:6005/on-prem/license \
   -H "Content-Type: application/json" \
   -d '{"tenantId": 8, "startDate": "2026-03-12", "cycle": "ANNUALLY", "maxUsers": 50}' \
   -o license/license.lic
@@ -887,7 +887,7 @@ PUBLIC_KEY_BASE64=$(cat tools/keys/public.pem | base64 | tr -d '\n')
 
 cat > delivery-package/.env << EOF
 POSTGRES_PASSWORD=${DB_PASSWORD}
-DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/ix_db?schema=public
+DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/arc_db?schema=public
 JWT_SECRET=${JWT_SECRET}
 JWT_EXPIRATION=15m
 JWT_REFRESH_EXPIRATION_DAYS=7
@@ -933,12 +933,12 @@ tar -tzf ix-copilot-onprem.tar.gz
 | postgres | `postgres:15-alpine` | — | 5432 | PostgreSQL database |
 | redis | `redis:7-alpine` | — | 6379 | Quota caching (license-service) |
 | migrate | `local/ix-copilot/migrate` | — | — | Runs DB migrations, then exits |
-| tenant-service | `local/ix-copilot/tenant-service` | 4003 | 3003 | Tenant lifecycle, billing, invoices |
-| users-service | `local/ix-copilot/users-service` | 4004 | 3004 | Users, roles, groups, RBAC |
-| audit-service | `local/ix-copilot/audit-service` | 4002 | 3002 | Centralized audit logging |
-| auth-service | `local/ix-copilot/auth-service` | 4001 | 3001 | JWT auth, MFA, SSO, credentials |
-| license-service | `local/ix-copilot/license-service` | 4005 | 3005 | License validation, plans, quotas |
-| admin-portal | `local/ix-copilot/admin-portal` | 4006 | 3006 | BFF aggregator for frontend |
+| tenant-service | `local/ix-copilot/tenant-service` | 6003 | 5003 | Tenant lifecycle, billing, invoices |
+| users-service | `local/ix-copilot/users-service` | 6004 | 5004 | Users, roles, groups, RBAC |
+| audit-service | `local/ix-copilot/audit-service` | 6002 | 5002 | Centralized audit logging |
+| auth-service | `local/ix-copilot/auth-service` | 6001 | 5001 | JWT auth, MFA, SSO, credentials |
+| license-service | `local/ix-copilot/license-service` | 6005 | 5005 | License validation, plans, quotas |
+| admin-portal | `local/ix-copilot/admin-portal` | 6006 | 5006 | BFF aggregator for frontend |
 | admin-ui | `local/ix-copilot/admin-ui` | 3000 | — | Next.js admin dashboard |
 
 ### Data Persistence (Docker Volumes)
@@ -953,12 +953,12 @@ tar -tzf ix-copilot-onprem.tar.gz
 | Port Range | Purpose | External Access Needed? |
 |------------|---------|------------------------|
 | 3000 | Admin UI (frontend) | **Yes** — end users access this |
-| 3001–3006 | TCP (inter-service communication) | No — internal only |
-| 4001–4006 | HTTP (REST APIs) | Optional — for debugging/monitoring |
+| 5001–5006 | TCP (inter-service communication) | No — internal only |
+| 6001–6006 | HTTP (REST APIs) | Optional — for debugging/monitoring |
 | 5432 | PostgreSQL | No — internal only |
 | 6379 | Redis | No — internal only |
 
-> **Firewall recommendation**: Only expose port 3000 to end users. Block 3001–3006, 4001–4006, 5432, 6379 from external access.
+> **Firewall recommendation**: Only expose port 3000 to end users. Block 5001–5006, 6001–6006, 5432, 6379 from external access.
 
 ---
 
@@ -1009,7 +1009,7 @@ Common causes:
 ### "License Invalid" / 403 on all endpoints
 
 ```bash
-curl http://localhost:4005/on-prem/license/status
+curl http://localhost:6005/on-prem/license/status
 ```
 
 | Status in Response | Cause | Fix |
@@ -1042,7 +1042,7 @@ docker compose logs migrate
 docker compose up migrate
 
 # If database is corrupted, restore from backup
-cat backup.sql | docker compose exec -T postgres psql -U postgres ix_db
+cat backup.sql | docker compose exec -T postgres psql -U postgres arc_db
 docker compose restart
 ```
 
@@ -1083,7 +1083,7 @@ df -h
 | 2 | `POSTGRES_PASSWORD` is changed from vendor default (on fresh install only) | Recommended |
 | 3 | `JWT_SECRET` is regenerated: `openssl rand -base64 64` | Recommended |
 | 4 | `license/license.lic` is mounted read-only (`:ro` in compose — default) | Default |
-| 5 | Firewall restricts ports 3001–3006, 4001–4006, 5432, 6379 to internal access only | Recommended |
+| 5 | Firewall restricts ports 5001–5006, 6001–6006, 5432, 6379 to internal access only | Recommended |
 | 6 | Only port 3000 (frontend) is exposed to end users | Recommended |
 | 7 | Regular database backups are scheduled (daily recommended) | Recommended |
 | 8 | Server has automatic security updates enabled | Recommended |
@@ -1142,10 +1142,10 @@ docker compose logs -f <service>  # logs (specific service)
 
 ```bash
 # Backup database
-docker compose exec -T postgres pg_dump -U postgres ix_db > backup_$(date +%Y%m%d).sql
+docker compose exec -T postgres pg_dump -U postgres arc_db > backup_$(date +%Y%m%d).sql
 
 # Check license
-curl http://localhost:4005/on-prem/license/status
+curl http://localhost:6005/on-prem/license/status
 
 # Update license (no restart needed)
 cp new-license.lic license/license.lic

@@ -6,6 +6,6 @@ export const validationSchema = Joi.object({
     .default('development'),
   DATABASE_URL: Joi.string().required(),
   JWT_SECRET: Joi.string().required(),
-  AUDIT_SERVICE_PORT: Joi.number().default(3002),
-  AUDIT_SERVICE_HTTP_PORT: Joi.number().default(4002),
+  AUDIT_SERVICE_PORT: Joi.number().default(5002),
+  AUDIT_SERVICE_HTTP_PORT: Joi.number().default(6002),
 });

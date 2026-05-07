@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-const BFF_URL = process.env.BFF_INTERNAL_URL || 'http://localhost:4006';
+const BFF_URL = process.env.BFF_INTERNAL_URL || 'http://localhost:6006';
 
 async function proxyRequest(
   request: NextRequest,

@@ -96,7 +96,7 @@ This will:
 **Alternative** -- via license-service API (requires running service with private key):
 
 ```bash
-curl -X POST http://localhost:4005/on-prem/license \
+curl -X POST http://localhost:6005/on-prem/license \
   -H "Content-Type: application/json" \
   -d '{"tenantId": 8, "cycle": "ANNUALLY"}' \
   -o license/license.lic
@@ -147,7 +147,7 @@ Edit `.env.onprem`:
 
 ```env
 POSTGRES_PASSWORD=<strong-password>
-DATABASE_URL=postgresql://postgres:<same-password>@postgres:5432/ix_db?schema=public
+DATABASE_URL=postgresql://postgres:<same-password>@postgres:5432/arc_db?schema=public
 JWT_SECRET=<generate-with: openssl rand -base64 64>
 JWT_EXPIRATION=15m
 JWT_REFRESH_EXPIRATION_DAYS=7
@@ -186,7 +186,7 @@ docker compose --env-file .env.onprem -f docker-compose.onprem.yml ps
 docker compose --env-file .env.onprem -f docker-compose.onprem.yml logs -f
 
 # Verify license status
-curl http://localhost:4005/on-prem/license/status
+curl http://localhost:6005/on-prem/license/status
 ```
 
 Expected license response:
@@ -294,7 +294,7 @@ In `.env.onprem` (or `.env` in the delivery package):
 ```env
 # Skip Docker postgres — use customer's own PostgreSQL
 EXTERNAL_DB=true
-DATABASE_URL=postgresql://myuser:mypass@192.168.1.50:5432/ix_db?schema=public
+DATABASE_URL=postgresql://myuser:mypass@192.168.1.50:5432/arc_db?schema=public
 
 # Skip Docker redis — use customer's own Redis
 EXTERNAL_REDIS=true
@@ -305,7 +305,7 @@ REDIS_PORT=6379
 ### Requirements for External PostgreSQL
 
 - PostgreSQL **15 or higher**
-- The database must already exist (`CREATE DATABASE ix_db` — migrations do NOT create it)
+- The database must already exist (`CREATE DATABASE arc_db` — migrations do NOT create it)
 - The DB user must have full DDL permissions (`CREATE TABLE`, `ALTER TABLE`, `CREATE INDEX`, etc.)
 - PostgreSQL must accept connections from Docker containers:
   - Check `pg_hba.conf` allows the Docker network range

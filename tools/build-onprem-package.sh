@@ -176,7 +176,7 @@ if [ "$ENV_EXTERNAL_DB" = "true" ]; then
   ENV_DATABASE_URL=$(read_env "DATABASE_URL" "postgresql://<user>:<password>@<host>:5432/<dbname>?schema=public")
   ENV_POSTGRES_PASSWORD=""
 else
-  ENV_DATABASE_URL="postgresql://postgres:${DB_PASSWORD}@postgres:5432/ix_db?schema=public"
+  ENV_DATABASE_URL="postgresql://postgres:${DB_PASSWORD}@postgres:5432/arc_db?schema=public"
   ENV_POSTGRES_PASSWORD="${DB_PASSWORD}"
 fi
 
@@ -199,7 +199,7 @@ EXTERNAL_REDIS=${ENV_EXTERNAL_REDIS}
 # When EXTERNAL_DB=true:
 #   POSTGRES_PASSWORD is ignored (your external DB manages auth).
 #   DATABASE_URL must point to your PostgreSQL server.
-#   Example: postgresql://myuser:mypass@192.168.1.50:5432/ix_db?schema=public
+#   Example: postgresql://myuser:mypass@192.168.1.50:5432/arc_db?schema=public
 #   Requirements:
 #     - PostgreSQL 15+
 #     - Database must already exist (we run migrations, not CREATE DATABASE)

@@ -8,8 +8,8 @@ The audit service is the central event log for the platform. It records who did 
 
 | Transport  | Address               | Port   |
 |------------|-----------------------|--------|
-| TCP (RPC)  | `0.0.0.0`             | `3002` |
-| HTTP       | `http://localhost`    | `4002` |
+| TCP (RPC)  | `0.0.0.0`             | `5002` |
+| HTTP       | `http://localhost`    | `6002` |
 
 The constants are exported from `@arc/shared`:
 
@@ -366,7 +366,7 @@ Use a consistent `NOUN_VERB` or `RESOURCE_ACTION` pattern so logs remain queryab
 The audit service exposes a standard health endpoint:
 
 ```
-GET http://localhost:4002/health
+GET http://localhost:6002/health
 ```
 
 Returns `200 OK` when the service and its database connection are healthy.
@@ -379,8 +379,8 @@ Returns `200 OK` when the service and its database connection are healthy.
 |------------------------|----------|---------------|-------------------------------|
 | `DATABASE_URL`         | Yes      | —             | PostgreSQL connection string  |
 | `NODE_ENV`             | No       | `development` | Runtime environment           |
-| `AUDIT_SERVICE_PORT`   | No       | `3002`        | TCP microservice port         |
-| `AUDIT_SERVICE_HTTP_PORT` | No    | `4002`        | HTTP server port              |
+| `AUDIT_SERVICE_PORT`   | No       | `5002`        | TCP microservice port         |
+| `AUDIT_SERVICE_HTTP_PORT` | No    | `6002`        | HTTP server port              |
 
 ---
 
@@ -389,5 +389,5 @@ Returns `200 OK` when the service and its database connection are healthy.
 When `NODE_ENV !== 'production'` the interactive API docs are available at:
 
 ```
-http://localhost:4002/api
+http://localhost:6002/api
 ```

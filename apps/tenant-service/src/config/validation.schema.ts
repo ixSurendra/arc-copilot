@@ -6,7 +6,7 @@ export const validationSchema = Joi.object({
     .default('development'),
   DATABASE_URL: Joi.string().required(),
   JWT_SECRET: Joi.string().required(),
-  TENANT_SERVICE_PORT: Joi.number().default(3003),
-  TENANT_SERVICE_HTTP_PORT: Joi.number().default(4003),
+  TENANT_SERVICE_PORT: Joi.number().default(5003),
+  TENANT_SERVICE_HTTP_PORT: Joi.number().default(6003),
   USERS_SERVICE_HOST: Joi.string().default('localhost'),
 });

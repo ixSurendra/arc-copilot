@@ -8,8 +8,8 @@ The auth service handles authentication, JWT token management, credential storag
 
 | Transport  | Address            | Port   |
 |------------|--------------------|--------|
-| TCP (RPC)  | `0.0.0.0`          | `3001` |
-| HTTP       | `http://localhost`  | `4001` |
+| TCP (RPC)  | `0.0.0.0`          | `5001` |
+| HTTP       | `http://localhost`  | `6001` |
 
 ---
 
@@ -65,8 +65,8 @@ The auth service handles authentication, JWT token management, credential storag
 
 | Service         | Port | Patterns Used | Purpose |
 |-----------------|------|---------------|---------|
-| Tenant Service  | 3003 | `get_tenant`, `get_tenant_status` | Verify tenant exists and is active during login. |
-| Users Service   | 3004 | `get_user_by_email`, `get_effective_roles` | Resolve user identity and fetch effective roles. |
+| Tenant Service  | 5003 | `get_tenant`, `get_tenant_status` | Verify tenant exists and is active during login. |
+| Users Service   | 5004 | `get_user_by_email`, `get_effective_roles` | Resolve user identity and fetch effective roles. |
 
 ---
 

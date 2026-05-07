@@ -12,19 +12,19 @@ Day-to-day development workflow for working on ix-copilot services locally.
 │                                                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
 │  │ auth-service  │  │ audit-service │  │tenant-service│       │
-│  │ TCP:3001      │  │ TCP:3002      │  │ TCP:3003     │       │
-│  │ HTTP:4001     │  │ HTTP:4002     │  │ HTTP:4003    │       │
+│  │ TCP:5001      │  │ TCP:5002      │  │ TCP:5003     │       │
+│  │ HTTP:6001     │  │ HTTP:6002     │  │ HTTP:6003    │       │
 │  └──────┬───────┘  └──────────────┘  └──────────────┘       │
 │         │ TCP calls                                          │
 │  ┌──────┴───────┐  ┌──────────────┐                         │
 │  │ users-service │  │license-service│                         │
-│  │ TCP:3004      │  │ TCP:3005      │                         │
-│  │ HTTP:4004     │  │ HTTP:4005     │                         │
+│  │ TCP:5004      │  │ TCP:5005      │                         │
+│  │ HTTP:6004     │  │ HTTP:6005     │                         │
 │  └──────────────┘  └──────┬───────┘                         │
 │                           │                                  │
 │  ┌────────────────────────┴─────────────────────────┐       │
 │  │  PostgreSQL (localhost:5432)  │  Redis (localhost:6379)   │
-│  │  Database: ix_db              │                           │
+│  │  Database: arc_db              │                           │
 │  └───────────────────────────────────────────────────┘       │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -35,11 +35,11 @@ Day-to-day development workflow for working on ix-copilot services locally.
 
 | Service | TCP Port | HTTP Port | Swagger UI |
 |---------|----------|-----------|------------|
-| auth-service | 3001 | 4001 | http://localhost:4001/api |
-| audit-service | 3002 | 4002 | http://localhost:4002/api |
-| tenant-service | 3003 | 4003 | http://localhost:4003/api |
-| users-service | 3004 | 4004 | http://localhost:4004/api |
-| license-service | 3005 | 4005 | http://localhost:4005/api |
+| auth-service | 5001 | 6001 | http://localhost:6001/api |
+| audit-service | 5002 | 6002 | http://localhost:6002/api |
+| tenant-service | 5003 | 6003 | http://localhost:6003/api |
+| users-service | 5004 | 6004 | http://localhost:6004/api |
+| license-service | 5005 | 6005 | http://localhost:6005/api |
 | PostgreSQL | 5432 | - | - |
 | Redis | 6379 | - | - |
 
@@ -161,7 +161,7 @@ Opens a browser UI at http://localhost:5555 to browse and edit data. Never use i
 ### Reset Database (drop all tables, re-migrate)
 
 ```bash
-dropdb ix_db && createdb ix_db && pnpm nx run-many --target=prisma:migrate:deploy
+dropdb arc_db && createdb arc_db && pnpm nx run-many --target=prisma:migrate:deploy
 ```
 
 ---

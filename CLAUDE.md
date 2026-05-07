@@ -71,12 +71,12 @@ ix-copilot is a **multi-tenant SaaS foundation layer** — Nx monorepo, 5 NestJS
 
 | Service | TCP | HTTP | Purpose |
 |---------|-----|------|---------|
-| auth-service | 3001 | 4001 | JWT auth, credentials, MFA, SSO |
-| audit-service | 3002 | 4002 | Centralized audit logging |
-| tenant-service | 3003 | 4003 | Tenant lifecycle, billing, invoices |
-| users-service | 3004 | 4004 | Users, roles, groups, RBAC |
-| license-service | 3005 | 4005 | Plans, features, quotas, usage |
-| admin-portal | 3006 | 4006 | BFF aggregator for admin-ui |
+| auth-service | 5001 | 6001 | JWT auth, credentials, MFA, SSO |
+| audit-service | 5002 | 6002 | Centralized audit logging |
+| tenant-service | 5003 | 6003 | Tenant lifecycle, billing, invoices |
+| users-service | 5004 | 6004 | Users, roles, groups, RBAC |
+| license-service | 5005 | 6005 | Plans, features, quotas, usage |
+| admin-portal | 5006 | 6006 | BFF aggregator for admin-ui |
 | admin-ui | — | 3100 | Next.js admin dashboard |
 
 ## Key Patterns

@@ -48,16 +48,16 @@ Service Summary:
 ┌──────────────────┬──────────┬──────────┬────────────┬─────────────────────┐
 │ Service          │ TCP Port │ HTTP Port│ Database   │ Purpose             │
 ├──────────────────┼──────────┼──────────┼────────────┼─────────────────────┤
-│ Auth Service     │ 3001     │ 4001     │ auth_db    │ Authentication/JWT  │
-│ Audit Service    │ 3002     │ 4002     │ audit_db   │ Audit logging       │
-│ Tenant Service   │ 3003     │ 4003     │ tenant_db  │ Tenant & billing    │
-│ Users Service    │ 3004     │ 4004     │ users_db   │ Users, roles, RBAC  │
-│ License Service  │ 3005     │ 4005     │ license_db │ Plans, quotas, usage│
+│ Auth Service     │ 5001     │ 6001     │ auth_db    │ Authentication/JWT  │
+│ Audit Service    │ 5002     │ 6002     │ audit_db   │ Audit logging       │
+│ Tenant Service   │ 5003     │ 6003     │ tenant_db  │ Tenant & billing    │
+│ Users Service    │ 5004     │ 6004     │ users_db   │ Users, roles, RBAC  │
+│ License Service  │ 5005     │ 6005     │ license_db │ Plans, quotas, usage│
 └──────────────────┴──────────┴──────────┴────────────┴─────────────────────┘
 
 Port Convention:
-  - TCP ports: 3001–3005 (internal microservice-to-microservice)
-  - HTTP ports: 4001–4005 (external REST API + Swagger UI)
+  - TCP ports: 5001–5005 (internal microservice-to-microservice)
+  - HTTP ports: 6001–6005 (external REST API + Swagger UI)
   - Swagger UI: http://localhost:{HTTP_PORT}/api
   - Health check: GET http://localhost:{HTTP_PORT}/health
 
@@ -175,8 +175,8 @@ import contracts via `import { ... } from '@arc/shared'`.
 Constants:
   - Service names: AUTH_SERVICE, AUDIT_SERVICE, TENANT_SERVICE,
     USERS_SERVICE, LICENSE_SERVICE
-  - TCP ports: 3001–3005
-  - HTTP ports: 4001–4005
+  - TCP ports: 5001–5005
+  - HTTP ports: 6001–6005
 
 Enums:
   - TenantStatus (ACTIVE, INACTIVE, SUSPENDED)
@@ -494,8 +494,8 @@ TCP Patterns:
   get_auth_config  Get tenant auth configuration
 
 Dependencies:
-  - Tenant Service (TCP 3003) — verify tenant exists + check tenant status
-  - Users Service (TCP 3004) — get user by email, get effective roles
+  - Tenant Service (TCP 5003) — verify tenant exists + check tenant status
+  - Users Service (TCP 5004) — get user by email, get effective roles
     (direct + group-inherited)
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -609,7 +609,7 @@ TCP Patterns:
                      Returns PaginatedResponse.
 
 Dependencies:
-  - Tenant Service (TCP 3003) — get tenant plan, billing cycle, cycle start
+  - Tenant Service (TCP 5003) — get tenant plan, billing cycle, cycle start
 
 ================================================================================
 6. INTER-SERVICE COMMUNICATION
@@ -621,7 +621,7 @@ using ClientProxy.send() with firstValueFrom() for request-response.
 
   ┌───────────────┐           ┌─────────────────┐
   │ Auth Service   │──TCP────▶│ Tenant Service   │
-  │ (port 3001)    │           │ (port 3003)      │
+  │ (port 5001)    │           │ (port 5003)      │
   │                │           │                  │
   │  get_tenant    │           │  Returns tenant  │
   │  get_tenant_   │           │  data + status   │
@@ -632,7 +632,7 @@ using ClientProxy.send() with firstValueFrom() for request-response.
           ▼
   ┌───────────────┐
   │ Users Service  │
-  │ (port 3004)    │
+  │ (port 5004)    │
   │                │
   │ get_user_by_      │
   │ email             │
@@ -642,7 +642,7 @@ using ClientProxy.send() with firstValueFrom() for request-response.
 
   ┌───────────────┐           ┌─────────────────┐
   │License Service │──TCP────▶│ Tenant Service   │
-  │ (port 3005)    │           │ (port 3003)      │
+  │ (port 5005)    │           │ (port 5003)      │
   │                │           │                  │
   │  get_tenant    │           │  Returns tenant  │
   │  (for planId,  │           │  with planId,    │
@@ -652,7 +652,7 @@ using ClientProxy.send() with firstValueFrom() for request-response.
   ┌───────────────┐
   │ Any Service    │──TCP(event)──▶┌──────────────┐
   │                │                │Audit Service │
-  │ audit_log_     │                │ (port 3002)  │
+  │ audit_log_     │                │ (port 5002)  │
   │ created        │                │              │
   └───────────────┘                └──────────────┘
 
@@ -879,18 +879,18 @@ Running Services:
 
 Verify:
   - Health checks:
-      curl http://localhost:4001/health   # Auth
-      curl http://localhost:4002/health   # Audit
-      curl http://localhost:4003/health   # Tenant
-      curl http://localhost:4004/health   # Users
-      curl http://localhost:4005/health   # License
+      curl http://localhost:6001/health   # Auth
+      curl http://localhost:6002/health   # Audit
+      curl http://localhost:6003/health   # Tenant
+      curl http://localhost:6004/health   # Users
+      curl http://localhost:6005/health   # License
 
   - Swagger UI (browser):
-      http://localhost:4001/api           # Auth Service API docs
-      http://localhost:4002/api           # Audit Service API docs
-      http://localhost:4003/api           # Tenant Service API docs
-      http://localhost:4004/api           # Users Service API docs
-      http://localhost:4005/api           # License Service API docs
+      http://localhost:6001/api           # Auth Service API docs
+      http://localhost:6002/api           # Audit Service API docs
+      http://localhost:6003/api           # Tenant Service API docs
+      http://localhost:6004/api           # Users Service API docs
+      http://localhost:6005/api           # License Service API docs
 
 Prisma Studio (visual database browser, dev only):
   pnpm nx run tenant-service:prisma:studio
@@ -912,7 +912,7 @@ Useful Nx Commands:
 
 Complete endpoint listing (81 HTTP endpoints + 25 TCP patterns):
 
-AUTH SERVICE (http://localhost:4001)
+AUTH SERVICE (http://localhost:6001)
   POST   /auth/login
   POST   /auth/refresh
   POST   /auth/logout
@@ -929,12 +929,12 @@ AUTH SERVICE (http://localhost:4001)
   PATCH  /auth-config/sso-providers/:id
   GET    /health
 
-AUDIT SERVICE (http://localhost:4002)
+AUDIT SERVICE (http://localhost:6002)
   GET    /audit-logs
   GET    /audit-logs/:id
   GET    /health
 
-TENANT SERVICE (http://localhost:4003)
+TENANT SERVICE (http://localhost:6003)
   POST   /tenants
   GET    /tenants
   GET    /tenants/:id
@@ -948,7 +948,7 @@ TENANT SERVICE (http://localhost:4003)
   GET    /plan-history
   GET    /health
 
-USERS SERVICE (http://localhost:4004)
+USERS SERVICE (http://localhost:6004)
   POST   /users
   GET    /users
   GET    /users/:id
@@ -985,7 +985,7 @@ USERS SERVICE (http://localhost:4004)
   PATCH  /permissions/:id
   GET    /health
 
-LICENSE SERVICE (http://localhost:4005)
+LICENSE SERVICE (http://localhost:6005)
   POST   /features
   GET    /features
   GET    /features/:id
@@ -1020,7 +1020,7 @@ Purpose:
   dashboard. Acts as single entry point for admin-ui, handling auth,
   tenant scoping, and audit logging at the gateway level.
 
-Port: TCP 3006, HTTP 4006
+Port: TCP 5006, HTTP 6006
 
 Modules:
   - Dashboard: Aggregated stats from tenant + users + license services

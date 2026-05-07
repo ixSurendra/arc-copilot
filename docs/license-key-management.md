@@ -182,7 +182,7 @@ npx tsx tools/generate-license-file.ts
 ### Generate via Swagger (Alternative)
 
 1. Start license-service locally with `ON_PREM=true` and private key in `.env`
-2. Open http://localhost:4005/api
+2. Open http://localhost:6005/api
 3. Find `POST /on-prem/license`
 4. Send request with tenantId and cycle
 5. Save response JSON as `license.lic`
@@ -190,7 +190,7 @@ npx tsx tools/generate-license-file.ts
 ### Generate via curl (Alternative)
 
 ```bash
-curl -X POST http://localhost:4005/on-prem/license \
+curl -X POST http://localhost:6005/on-prem/license \
   -H "Content-Type: application/json" \
   -d '{
     "tenantId": 8,
@@ -260,7 +260,7 @@ curl -X POST http://localhost:4005/on-prem/license \
 1. **You (vendor)**: Generate a new license with a new expiry date
 
 ```bash
-curl -X POST http://localhost:4005/on-prem/license \
+curl -X POST http://localhost:6005/on-prem/license \
   -H "Content-Type: application/json" \
   -d '{"tenantId":"<same-tenant-uuid>","cycle":"ANNUALLY"}'
 ```
