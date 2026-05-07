@@ -1,0 +1,23 @@
+import { Module } from '@nestjs/common';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { LICENSE_SERVICE_PORT } from '@org/shared';
+import { AdminFeaturesController } from './features.controller';
+import { AdminFeaturesService } from './features.service';
+
+@Module({
+  imports: [
+    ClientsModule.register([
+      {
+        name: 'LICENSE_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env['LICENSE_SERVICE_HOST'] || 'localhost',
+          port: LICENSE_SERVICE_PORT,
+        },
+      },
+    ]),
+  ],
+  controllers: [AdminFeaturesController],
+  providers: [AdminFeaturesService],
+})
+export class AdminFeaturesModule {}

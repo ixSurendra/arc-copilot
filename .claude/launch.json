@@ -1,0 +1,48 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "admin-ui",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "run", "admin-ui:dev"],
+      "port": 3100,
+      "autoPort": false
+    },
+    {
+      "name": "auth-service",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "serve", "auth-service"],
+      "port": 4001
+    },
+    {
+      "name": "audit-service",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "serve", "audit-service"],
+      "port": 4002
+    },
+    {
+      "name": "tenant-service",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "serve", "tenant-service"],
+      "port": 4003
+    },
+    {
+      "name": "users-service",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "serve", "users-service"],
+      "port": 4004
+    },
+    {
+      "name": "license-service",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "serve", "license-service"],
+      "port": 4005
+    },
+    {
+      "name": "admin-portal",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "serve", "admin-portal"],
+      "port": 4006
+    }
+  ]
+}

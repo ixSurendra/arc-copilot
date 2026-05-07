@@ -1,0 +1,46 @@
+# ================================================================
+# ix-copilot — CI (typecheck on every PR / push to main)
+# Deployment is handled by deploy.yml (triggered by version tags)
+# ================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma clients (all services)
+        run: |
+          pnpm dlx prisma generate --schema=apps/auth-service/prisma/schema.prisma
+          pnpm dlx prisma generate --schema=apps/audit-service/prisma/schema.prisma
+          pnpm dlx prisma generate --schema=apps/tenant-service/prisma/schema.prisma
+          pnpm dlx prisma generate --schema=apps/users-service/prisma/schema.prisma
+          pnpm dlx prisma generate --schema=apps/license-service/prisma/schema.prisma
+        env:
+          DATABASE_URL: postgresql://build:build@localhost:5432/build
+
+      - name: Typecheck all projects
+        run: pnpm nx run-many -t typecheck --parallel=4
+        env:
+          NX_NO_CLOUD: true
+          DATABASE_URL: postgresql://build:build@localhost:5432/build

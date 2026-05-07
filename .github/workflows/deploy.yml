@@ -1,0 +1,167 @@
+# ================================================================
+# ix-copilot — Build & Deploy Pipeline
+#
+# Trigger: push a version tag  →  git tag v1.0.0 && git push --tags
+# Steps:
+#   1. Build all 8 Docker images in parallel (linux/amd64)
+#   2. Push to GitHub Container Registry (GHCR) with version tag
+#   3. SSH into EC2 → docker compose pull → docker compose up -d
+#
+# Required GitHub Secrets:
+#   EC2_HOST    → 13.127.14.176
+#   EC2_SSH_KEY → contents of innovatech-aws-keypair.pem  (full PEM text)
+#   GHCR_PAT    → GitHub PAT with  read:packages + write:packages  scope
+#
+# How to deploy:
+#   git tag v1.0.0
+#   git push origin v1.0.0
+# ================================================================
+
+name: Build & Deploy
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # matches v1.0.0, v2.1.3, v1.0.0-hotfix, etc.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag to deploy (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+env:
+  # Use the git tag as the image version (v1.0.0) or manual input
+  VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  # ── Build all 8 Docker images in parallel ────────────────────
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false # don't cancel other builds if one fails
+      matrix:
+        include:
+          - name: migrate
+            dockerfile: Dockerfile.migrate
+            build-args: ""
+          - name: auth-service
+            dockerfile: Dockerfile
+            build-args: SERVICE_NAME=auth-service
+          - name: audit-service
+            dockerfile: Dockerfile
+            build-args: SERVICE_NAME=audit-service
+          - name: tenant-service
+            dockerfile: Dockerfile
+            build-args: SERVICE_NAME=tenant-service
+          - name: users-service
+            dockerfile: Dockerfile
+            build-args: SERVICE_NAME=users-service
+          - name: license-service
+            dockerfile: Dockerfile
+            build-args: SERVICE_NAME=license-service
+          - name: admin-portal
+            dockerfile: Dockerfile
+            build-args: SERVICE_NAME=admin-portal
+          - name: admin-ui
+            dockerfile: Dockerfile.nextjs
+            build-args: APP_NAME=admin-ui
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set lowercase registry
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "LC_REGISTRY=ghcr.io/${OWNER_LC}/ix-copilot" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          build-args: ${{ matrix.build-args }}
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.LC_REGISTRY }}/${{ matrix.name }}:latest
+            ${{ env.LC_REGISTRY }}/${{ matrix.name }}:${{ env.VERSION }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  # ── Deploy to EC2 once ALL images are pushed ─────────────────
+  deploy:
+    name: Deploy ${{ github.ref_name }} to EC2
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync compose file to EC2
+        # git isn't installed on EC2, so we scp the compose file instead of
+        # relying on `git pull`. strip_components: 1 drops the "cloud/" prefix,
+        # landing the file at ~/ix-copilot/docker-compose.yml.
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "cloud/docker-compose.yml"
+          target: "/home/ec2-user/ix-copilot/"
+          strip_components: 1
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: VERSION
+          script: |
+            set -e
+            echo "━━━ Deploying ix-copilot ${VERSION} ━━━"
+
+            # Login to GHCR on EC2
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io \
+              -u ${{ github.actor }} --password-stdin
+
+            cd ~/ix-copilot
+
+            # Compute lowercase registry (org name may have uppercase letters)
+            OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+
+            # Pin the deployed version in .env
+            sed -i "s|^REGISTRY=.*|REGISTRY=ghcr.io/${OWNER_LC}|g" .env
+            sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=${VERSION}|" .env
+
+            # Pull all images for this version
+            docker compose pull
+
+            # Restart all services. Compose detects the new image tag + updated
+            # command on the one-shot migrate/seed containers and recreates them,
+            # so new seed steps run automatically on every deploy.
+            docker compose up -d --remove-orphans
+
+            # Remove old dangling images to free disk space
+            docker image prune -f
+
+            echo "✓ ${VERSION} deployed successfully"
+            docker compose ps

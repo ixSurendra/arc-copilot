@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────────
+
+enum AuthType {
+  PASSWORD
+  SSO_GOOGLE
+  SSO_MICROSOFT
+  SAML
+  MAGIC_LINK
+  LDAP
+  @@map("AUTH_TYPE")
+}
+
+enum SsoProviderType {
+  GOOGLE
+  MICROSOFT
+  SAML
+  OKTA
+  LDAP
+  CUSTOM
+  @@map("SSO_PROVIDER_TYPE")
+}
+
+enum MfaType {
+  EMAIL_OTP
+  SMS_OTP
+  AUTHENTICATOR_APP
+  @@map("MFA_TYPE")
+}
+
+enum LoginAttemptStatus {
+  SUCCESS
+  FAILED
+  BLOCKED
+  @@map("LOGIN_ATTEMPT_STATUS")
+}
+
+enum TokenStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+  @@map("TOKEN_STATUS")
+}
+
+enum CredentialStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+  @@map("CREDENTIAL_STATUS")
+}
+
+enum GenericStatus {
+  ACTIVE
+  INACTIVE
+  @@map("AUTH_GENERIC_STATUS")
+}
+
+// ──────────────────────────────────────────────
+// Tenant Auth Configuration
+// ──────────────────────────────────────────────
+
+model TenantAuthConfig {
+  id                        Int      @id @default(autoincrement()) @map("ID")
+  tenantId                  Int      @unique @map("TENANT_ID")
+  isMfaMandatory            Boolean  @default(false) @map("IS_MFA_MANDATORY")
+  allowedAuthTypes          Json     @default("[\"PASSWORD\"]") @map("ALLOWED_AUTH_TYPES")
+  passwordMinLength         Int      @default(8) @map("PASSWORD_MIN_LENGTH")
+  passwordRequireUppercase  Boolean  @default(true) @map("PASSWORD_REQUIRE_UPPERCASE")
+  passwordRequireNumber     Boolean  @default(true) @map("PASSWORD_REQUIRE_NUMBER")
+  passwordRequireSpecialChar Boolean @default(true) @map("PASSWORD_REQUIRE_SPECIAL_CHAR")
+  passwordHistoryCount      Int      @default(3) @map("PASSWORD_HISTORY_COUNT")
+  maxFailedAttempts         Int      @default(5) @map("MAX_FAILED_ATTEMPTS")
+  lockoutDurationMinutes    Int      @default(30) @map("LOCKOUT_DURATION_MINUTES")
+  sessionTimeoutMinutes     Int      @default(60) @map("SESSION_TIMEOUT_MINUTES")
+  maxConcurrentSessions     Int      @default(5) @map("MAX_CONCURRENT_SESSIONS")
+  refreshTokenValidityDays  Int      @default(7) @map("REFRESH_TOKEN_VALIDITY_DAYS")
+  isLdapSyncEnabled         Boolean  @default(false) @map("IS_LDAP_SYNC_ENABLED")
+  ldapSyncFrequency         String?  @map("LDAP_SYNC_FREQUENCY")
+  ldapLastSyncedAt          DateTime? @map("LDAP_LAST_SYNCED_AT")
+  createdAt                 DateTime @default(now()) @map("CREATED_AT")
+  updatedAt                 DateTime @updatedAt @map("UPDATED_AT")
+
+  @@map("TENANT_AUTH_CONFIGS")
+}
+
+// ──────────────────────────────────────────────
+// SSO Provider Configuration
+// ──────────────────────────────────────────────
+
+model SsoProviderConfig {
+  id              Int             @id @default(autoincrement()) @map("ID")
+  tenantId        Int             @map("TENANT_ID")
+  providerType    SsoProviderType @map("PROVIDER_TYPE")
+  clientId        String          @map("CLIENT_ID")
+  clientSecret    String          @map("CLIENT_SECRET")
+  redirectUrl     String?         @map("REDIRECT_URL")
+  metadataUrl     String?         @map("METADATA_URL")
+  ldapHost        String?         @map("LDAP_HOST")
+  ldapBaseDn      String?         @map("LDAP_BASE_DN")
+  ldapBindUser    String?         @map("LDAP_BIND_USER")
+  ldapBindPassword String?        @map("LDAP_BIND_PASSWORD")
+  status          GenericStatus   @default(ACTIVE) @map("STATUS")
+  createdAt       DateTime        @default(now()) @map("CREATED_AT")
+  updatedAt       DateTime        @updatedAt @map("UPDATED_AT")
+
+  credentials     UserCredentials[]
+
+  @@index([tenantId])
+  @@index([tenantId, providerType])
+  @@map("SSO_PROVIDER_CONFIGS")
+}
+
+// ──────────────────────────────────────────────
+// User Credentials
+// ──────────────────────────────────────────────
+
+model UserCredentials {
+  id             Int              @id @default(autoincrement()) @map("ID")
+  userId         Int              @unique @map("USER_ID")
+  tenantId       Int              @map("TENANT_ID")
+  authType       AuthType         @map("AUTH_TYPE")
+  passwordHash   String?          @map("PASSWORD_HASH")
+  ssoProviderId  Int?             @map("SSO_PROVIDER_ID")
+  status         CredentialStatus @default(ACTIVE) @map("STATUS")
+  createdAt      DateTime         @default(now()) @map("CREATED_AT")
+  updatedAt      DateTime         @updatedAt @map("UPDATED_AT")
+
+  ssoProvider    SsoProviderConfig? @relation(fields: [ssoProviderId], references: [id])
+  passwordHistory PasswordHistory[]
+
+  @@index([tenantId])
+  @@index([ssoProviderId])
+  @@index([tenantId, status])
+  @@map("USER_CREDENTIALS")
+}
+
+// ──────────────────────────────────────────────
+// Password History
+// ──────────────────────────────────────────────
+
+model PasswordHistory {
+  id           Int      @id @default(autoincrement()) @map("ID")
+  userId       Int      @map("USER_ID")
+  tenantId     Int      @map("TENANT_ID")
+  passwordHash String   @map("PASSWORD_HASH")
+  changedAt    DateTime @default(now()) @map("CHANGED_AT")
+
+  credential   UserCredentials @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, changedAt])
+  @@map("PASSWORD_HISTORY")
+}
+
+// ──────────────────────────────────────────────
+// Refresh Tokens
+// ──────────────────────────────────────────────
+
+model RefreshToken {
+  id          Int         @id @default(autoincrement()) @map("ID")
+  userId      Int         @map("USER_ID")
+  tenantId    Int         @map("TENANT_ID")
+  tokenHash   String      @map("TOKEN_HASH")
+  deviceInfo  String?     @map("DEVICE_INFO")
+  ipAddress   String?     @map("IP_ADDRESS")
+  issuedAt    DateTime    @default(now()) @map("ISSUED_AT")
+  expiresAt   DateTime    @map("EXPIRES_AT")
+  status      TokenStatus @default(ACTIVE) @map("STATUS")
+  createdAt   DateTime    @default(now()) @map("CREATED_AT")
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([tokenHash])
+  @@index([status])
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("REFRESH_TOKENS")
+}
+
+// ──────────────────────────────────────────────
+// MFA Configuration
+// ──────────────────────────────────────────────
+
+model MfaConfig {
+  id          Int           @id @default(autoincrement()) @map("ID")
+  userId      Int           @unique @map("USER_ID")
+  tenantId    Int           @map("TENANT_ID")
+  mfaType     MfaType       @map("MFA_TYPE")
+  secretKey   String?       @map("SECRET_KEY")
+  phoneNumber String?       @map("PHONE_NUMBER")
+  isVerified  Boolean       @default(false) @map("IS_VERIFIED")
+  status      GenericStatus @default(ACTIVE) @map("STATUS")
+  createdAt   DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt   DateTime      @updatedAt @map("UPDATED_AT")
+
+  @@index([tenantId])
+  @@map("MFA_CONFIGS")
+}
+
+// ──────────────────────────────────────────────
+// Login Attempts
+// ──────────────────────────────────────────────
+
+model LoginAttempt {
+  id            Int                @id @default(autoincrement()) @map("ID")
+  userId        Int?               @map("USER_ID")
+  tenantId      Int                @map("TENANT_ID")
+  email         String             @map("EMAIL")
+  ipAddress     String?            @map("IP_ADDRESS")
+  deviceInfo    String?            @map("DEVICE_INFO")
+  location      String?            @map("LOCATION")
+  attemptType   AuthType           @map("ATTEMPT_TYPE")
+  status        LoginAttemptStatus @map("STATUS")
+  failureReason String?            @map("FAILURE_REASON")
+  attemptedAt   DateTime           @default(now()) @map("ATTEMPTED_AT")
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([email])
+  @@index([tenantId, email, attemptedAt])
+  @@index([ipAddress])
+  @@index([attemptedAt])
+  @@map("LOGIN_ATTEMPTS")
+}
+
+// ──────────────────────────────────────────────
+// Password Reset Tokens
+// ──────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement()) @map("ID")
+  userId    Int       @map("USER_ID")
+  tenantId  Int       @map("TENANT_ID")
+  tokenHash String    @map("TOKEN_HASH")
+  expiresAt DateTime  @map("EXPIRES_AT")
+  usedAt    DateTime? @map("USED_AT")
+  createdAt DateTime  @default(now()) @map("CREATED_AT")
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("PASSWORD_RESET_TOKENS")
+}

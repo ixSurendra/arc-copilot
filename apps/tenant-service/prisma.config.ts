@@ -1,0 +1,18 @@
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { defineConfig } from 'prisma/config';
+
+// Load shared root .env (DATABASE_URL) first, then service-specific .env
+config({ path: resolve(__dirname, '../../.env') });
+config({ path: resolve(__dirname, '.env') });
+
+export default defineConfig({
+  earlyAccess: true,
+  schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
+  datasource: {
+    url: process.env['DATABASE_URL']!,
+  },
+});

@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────
+// Enums
+// ──────────────────────────────────────
+
+enum FeatureStatus {
+  ACTIVE
+  INACTIVE
+  DEPRECATED
+  @@map("FEATURE_STATUS")
+}
+
+enum GenericStatus {
+  ACTIVE
+  INACTIVE
+  @@map("LICENSE_GENERIC_STATUS")
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUALLY
+  @@map("LICENSE_BILLING_CYCLE")
+}
+
+enum TopUpStatus {
+  ACTIVE
+  EXPIRED
+  FULLY_CONSUMED
+  @@map("TOP_UP_STATUS")
+}
+
+enum LicenseStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+  @@map("LICENSE_STATUS")
+}
+
+// ──────────────────────────────────────
+// Models
+// ──────────────────────────────────────
+
+/// Global feature registry — defines all quota-able features
+model FeatureRegistry {
+  id          Int           @id @default(autoincrement()) @map("ID")
+  featureKey  String        @unique @map("FEATURE_KEY")
+  featureName String        @map("FEATURE_NAME")
+  description String?       @map("DESCRIPTION")
+  category    String?       @map("CATEGORY")
+  valueType   String        @default("boolean") @map("VALUE_TYPE")
+  status      FeatureStatus @default(ACTIVE) @map("STATUS")
+  createdAt   DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt   DateTime      @updatedAt @map("UPDATED_AT")
+
+  planQuotas    PlanFeatureQuota[]
+  planPricings  TopUpPricing[]
+  topUps        QuotaTopUp[]
+  usageLedgers  UsageLedger[]
+  tenantConfigs TenantFeatureConfig[]
+
+  @@index([status])
+  @@index([category])
+  @@map("FEATURE_REGISTRY")
+}
+
+/// Subscription plan definition
+model Plan {
+  id          Int           @id @default(autoincrement()) @map("ID")
+  planName    String        @unique @map("PLAN_NAME")
+  description String?       @map("DESCRIPTION")
+  status      GenericStatus @default(ACTIVE) @map("STATUS")
+  createdAt   DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt   DateTime      @updatedAt @map("UPDATED_AT")
+
+  featureQuotas PlanFeatureQuota[]
+  pricings      PlanPricing[]
+  licenses      TenantLicense[]
+
+  @@index([status])
+  @@map("PLAN")
+}
+
+/// Quota allocation for a feature within a plan
+model PlanFeatureQuota {
+  planId    Int      @map("PLAN_ID")
+  featureId Int      @map("FEATURE_ID")
+  quotaLimit Int?    @map("QUOTA_LIMIT")
+  isEnabled  Boolean @default(true) @map("IS_ENABLED")
+  createdAt  DateTime @default(now()) @map("CREATED_AT")
+  updatedAt  DateTime @updatedAt @map("UPDATED_AT")
+
+  plan    Plan            @relation(fields: [planId], references: [id])
+  feature FeatureRegistry @relation(fields: [featureId], references: [id])
+
+  @@id([planId, featureId])
+  @@index([featureId])
+  @@map("PLAN_FEATURE_QUOTA")
+}
+
+/// Pricing for a plan by billing cycle
+model PlanPricing {
+  id           Int           @id @default(autoincrement()) @map("ID")
+  planId       Int           @map("PLAN_ID")
+  billingCycle BillingCycle  @map("BILLING_CYCLE")
+  price        Decimal       @map("PRICE") @db.Decimal(12, 2)
+  currency     String        @default("USD") @map("CURRENCY") @db.VarChar(3)
+  status       GenericStatus @default(ACTIVE) @map("STATUS")
+  createdAt    DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt    DateTime      @updatedAt @map("UPDATED_AT")
+
+  plan Plan @relation(fields: [planId], references: [id])
+
+  @@unique([planId, billingCycle, currency])
+  @@index([planId])
+  @@index([status])
+  @@map("PLAN_PRICING")
+}
+
+/// Pricing for quota top-up purchases
+model TopUpPricing {
+  id           Int           @id @default(autoincrement()) @map("ID")
+  featureId    Int           @map("FEATURE_ID")
+  quotaAmount  Int           @map("QUOTA_AMOUNT")
+  price        Decimal       @map("PRICE") @db.Decimal(12, 2)
+  currency     String        @default("USD") @map("CURRENCY") @db.VarChar(3)
+  validityDays Int           @map("VALIDITY_DAYS")
+  status       GenericStatus @default(ACTIVE) @map("STATUS")
+  createdAt    DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt    DateTime      @updatedAt @map("UPDATED_AT")
+
+  feature FeatureRegistry @relation(fields: [featureId], references: [id])
+
+  @@index([featureId])
+  @@index([status])
+  @@map("TOP_UP_PRICING")
+}
+
+/// Actual quota top-ups purchased by tenants
+model QuotaTopUp {
+  id              Int        @id @default(autoincrement()) @map("ID")
+  tenantId        Int        @map("TENANT_ID")
+  userId          Int?       @map("USER_ID")
+  featureId       Int        @map("FEATURE_ID")
+  additionalQuota Int        @map("ADDITIONAL_QUOTA")
+  consumed        Int        @default(0) @map("CONSUMED")
+  purchasedDate   DateTime   @default(now()) @map("PURCHASED_DATE")
+  expiryDate      DateTime   @map("EXPIRY_DATE")
+  status          TopUpStatus @default(ACTIVE) @map("STATUS")
+  createdAt       DateTime   @default(now()) @map("CREATED_AT")
+  updatedAt       DateTime   @updatedAt @map("UPDATED_AT")
+
+  feature FeatureRegistry @relation(fields: [featureId], references: [id])
+
+  @@index([tenantId, featureId])
+  @@index([tenantId, featureId, status])
+  @@index([tenantId, status])
+  @@index([expiryDate])
+  @@map("QUOTA_TOP_UP")
+}
+
+/// Usage tracking ledger per tenant/feature per billing cycle
+model UsageLedger {
+  id             Int      @id @default(autoincrement()) @map("ID")
+  tenantId       Int      @map("TENANT_ID")
+  featureId      Int      @map("FEATURE_ID")
+  userId         Int?     @map("USER_ID")
+  consumed       Int      @default(0) @map("CONSUMED")
+  cycleStartDate DateTime @map("CYCLE_START_DATE")
+  cycleEndDate   DateTime @map("CYCLE_END_DATE")
+  createdAt      DateTime @default(now()) @map("CREATED_AT")
+  updatedAt      DateTime @updatedAt @map("UPDATED_AT")
+
+  feature FeatureRegistry @relation(fields: [featureId], references: [id])
+
+  @@index([tenantId, featureId, cycleStartDate])
+  @@index([tenantId])
+  @@index([featureId])
+  @@map("USAGE_LEDGER")
+}
+
+/// Per-tenant feature configuration overrides (set by Super Admin)
+model TenantFeatureConfig {
+  id          Int      @id @default(autoincrement()) @map("ID")
+  tenantId    Int      @map("TENANT_ID")
+  featureId   Int      @map("FEATURE_ID")
+  configValue String?  @map("CONFIG_VALUE")     // Value depends on FeatureRegistry.valueType
+  isEnabled   Boolean  @default(true) @map("IS_ENABLED")
+  setBy       Int      @map("SET_BY")           // userId of Super Admin who set this
+  createdAt   DateTime @default(now()) @map("CREATED_AT")
+  updatedAt   DateTime @updatedAt @map("UPDATED_AT")
+
+  feature FeatureRegistry @relation(fields: [featureId], references: [id])
+
+  @@unique([tenantId, featureId])
+  @@index([tenantId])
+  @@map("TENANT_FEATURE_CONFIG")
+}
+
+/// Persisted on-prem license records per tenant
+model TenantLicense {
+  id            Int           @id @default(autoincrement()) @map("ID")
+  tenantId      Int           @map("TENANT_ID")
+  planId        Int           @map("PLAN_ID")
+  cycle         BillingCycle  @map("CYCLE")
+  maxUsers      Int?          @map("MAX_USERS")
+  startDate     DateTime      @map("START_DATE")
+  expiresAt     DateTime      @map("EXPIRES_AT")
+  issuedAt      DateTime      @default(now()) @map("ISSUED_AT")
+  signatureHash String        @map("SIGNATURE_HASH")
+  licenseData   Json          @map("LICENSE_DATA")
+  issuedBy      Int           @map("ISSUED_BY")
+  status        LicenseStatus @default(ACTIVE) @map("STATUS")
+  version       Int           @default(1) @map("VERSION")
+  createdAt     DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt     DateTime      @updatedAt @map("UPDATED_AT")
+
+  plan Plan @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, version])
+  @@map("TENANT_LICENSE")
+}

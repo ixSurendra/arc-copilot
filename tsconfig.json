@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/auth-service"
+    },
+    {
+      "path": "./apps/audit-service"
+    },
+    {
+      "path": "./libs/shared"
+    },
+    {
+      "path": "./apps/tenant-service"
+    },
+    {
+      "path": "./apps/users-service"
+    },
+    {
+      "path": "./apps/license-service"
+    },
+    {
+      "path": "./apps/admin-portal"
+    },
+    {
+      "path": "./apps/admin-ui"
+    }
+  ]
+}

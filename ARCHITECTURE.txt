@@ -1,0 +1,1314 @@
+================================================================================
+  IX-COPILOT — MULTI-TENANT SAAS FOUNDATION LAYER
+  Architecture, Design & User Manual
+================================================================================
+
+TABLE OF CONTENTS
+─────────────────
+  1. Overview
+  2. Technology Stack
+  3. Project Structure
+  4. Shared Library (@org/shared)
+  5. Service Details
+     5.1  Audit Service
+     5.2  Tenant Service
+     5.3  Users Service
+     5.4  Auth Service
+     5.5  License Service
+  6. Inter-Service Communication
+  7. Authentication & Authorization Flow
+  8. Quota & Usage Metering Flow
+  9. Database Design Summary
+  10. How to Run (User Manual)
+  11. API Quick Reference
+  12. Environment Variables
+  13. Future Roadmap
+
+================================================================================
+1. OVERVIEW
+================================================================================
+
+IX-Copilot is a multi-tenant SaaS foundation layer built as a collection of
+5 NestJS microservices in an Nx monorepo. Each service owns its own PostgreSQL
+database, exposes both HTTP REST APIs (for external clients) and TCP transport
+(for inter-service communication), and shares common contracts via a shared
+library.
+
+The system supports:
+  - Multi-tenant isolation with per-tenant configuration
+  - Role-based access control (RBAC) with modules, permissions, roles, groups
+  - JWT authentication with refresh token rotation
+  - Subscription plan management with quota metering
+  - Redis-backed real-time usage tracking
+  - Comprehensive audit logging
+  - SSO/LDAP integration readiness
+  - MFA support (Email OTP, SMS OTP, Authenticator App)
+
+Service Summary:
+┌──────────────────┬──────────┬──────────┬────────────┬─────────────────────┐
+│ Service          │ TCP Port │ HTTP Port│ Database   │ Purpose             │
+├──────────────────┼──────────┼──────────┼────────────┼─────────────────────┤
+│ Auth Service     │ 3001     │ 4001     │ auth_db    │ Authentication/JWT  │
+│ Audit Service    │ 3002     │ 4002     │ audit_db   │ Audit logging       │
+│ Tenant Service   │ 3003     │ 4003     │ tenant_db  │ Tenant & billing    │
+│ Users Service    │ 3004     │ 4004     │ users_db   │ Users, roles, RBAC  │
+│ License Service  │ 3005     │ 4005     │ license_db │ Plans, quotas, usage│
+└──────────────────┴──────────┴──────────┴────────────┴─────────────────────┘
+
+Port Convention:
+  - TCP ports: 3001–3005 (internal microservice-to-microservice)
+  - HTTP ports: 4001–4005 (external REST API + Swagger UI)
+  - Swagger UI: http://localhost:{HTTP_PORT}/api
+  - Health check: GET http://localhost:{HTTP_PORT}/health
+
+================================================================================
+2. TECHNOLOGY STACK
+================================================================================
+
+  Runtime:           Node.js (ES2021 target)
+  Framework:         NestJS v11
+  Monorepo:          Nx 22.5 with pnpm workspaces
+  ORM:               Prisma v7.4 with PostgreSQL adapter
+  Database:          PostgreSQL (one instance, separate databases per service)
+  Cache:             Redis (ioredis) — used by License Service
+  Auth:              JWT (@nestjs/jwt), Passport (@nestjs/passport), bcryptjs
+  Transport:         TCP (NestJS microservices) — Kafka planned for Phase 6
+  Validation:        class-validator + class-transformer
+  API Docs:          @nestjs/swagger (auto-disabled in production)
+  Build:             Webpack (NxAppWebpackPlugin) with TypeScript
+  Package Manager:   pnpm
+
+================================================================================
+3. PROJECT STRUCTURE
+================================================================================
+
+  ix-copilot/
+  ├── apps/
+  │   ├── audit-service/        # Audit logging microservice
+  │   │   ├── prisma/           #   Prisma schema + migrations
+  │   │   ├── src/
+  │   │   │   ├── app/          #   Root AppModule
+  │   │   │   ├── audit/        #   Audit controller, service, repository
+  │   │   │   ├── config/       #   Database config, validation schema
+  │   │   │   ├── prisma/       #   AuditPrismaService
+  │   │   │   └── main.ts       #   Bootstrap (TCP + HTTP)
+  │   │   └── package.json      #   Nx targets + dependencies
+  │   │
+  │   ├── tenant-service/       # Tenant & billing microservice
+  │   │   ├── prisma/
+  │   │   ├── src/
+  │   │   │   ├── app/
+  │   │   │   ├── tenants/      #   Tenant CRUD + TCP handlers
+  │   │   │   ├── billings/     #   Billing CRUD + TCP handlers
+  │   │   │   ├── invoices/     #   Invoice CRUD + TCP handlers
+  │   │   │   ├── plan-history/ #   Plan change history
+  │   │   │   ├── config/
+  │   │   │   ├── prisma/
+  │   │   │   └── main.ts
+  │   │   └── package.json
+  │   │
+  │   ├── users-service/        # Users, roles, RBAC microservice
+  │   │   ├── prisma/
+  │   │   ├── src/
+  │   │   │   ├── app/
+  │   │   │   ├── users/        #   User CRUD + role/group assignment
+  │   │   │   ├── roles/        #   Role CRUD + permission assignment
+  │   │   │   ├── groups/       #   Group CRUD + role assignment
+  │   │   │   ├── modules/      #   Global module CRUD
+  │   │   │   ├── permissions/  #   Global permission CRUD
+  │   │   │   ├── config/
+  │   │   │   ├── prisma/
+  │   │   │   └── main.ts
+  │   │   └── package.json
+  │   │
+  │   ├── auth-service/         # Authentication & JWT microservice
+  │   │   ├── prisma/
+  │   │   ├── src/
+  │   │   │   ├── app/
+  │   │   │   ├── auth/         #   Login, refresh, logout, token validation
+  │   │   │   ├── credentials/  #   Register credentials, change password
+  │   │   │   ├── mfa/          #   MFA setup, verify, disable
+  │   │   │   ├── auth-config/  #   Per-tenant auth config + SSO providers
+  │   │   │   ├── strategies/   #   JWT Passport strategy
+  │   │   │   ├── config/       #   Database, JWT, validation configs
+  │   │   │   ├── prisma/
+  │   │   │   └── main.ts
+  │   │   └── package.json
+  │   │
+  │   └── license-service/      # Plans, quotas, usage metering
+  │       ├── prisma/
+  │       ├── src/
+  │       │   ├── app/
+  │       │   ├── features/     #   Feature registry CRUD
+  │       │   ├── plans/        #   Plan CRUD + quota sub-resource
+  │       │   ├── pricing/      #   Plan pricing + top-up pricing
+  │       │   ├── quota/        #   Quota check (Redis-first) + top-up purchase
+  │       │   ├── usage/        #   Usage recording (Redis + DB)
+  │       │   ├── redis/        #   Global Redis module
+  │       │   ├── config/       #   Database, Redis, validation configs
+  │       │   ├── prisma/
+  │       │   └── main.ts
+  │       └── package.json
+  │
+  ├── libs/
+  │   └── shared/               # Shared library (@org/shared)
+  │       └── src/lib/
+  │           ├── constants/    #   Service names, port numbers
+  │           ├── dto/          #   DTOs (audit/, tenant/, users/, auth/, license/)
+  │           ├── enums/        #   All shared enumerations
+  │           ├── interfaces/   #   TypeScript interfaces per service
+  │           └── modules/      #   PrismaModule, HealthModule, setupSwagger
+  │
+  ├── CLAUDE.md                 # AI assistant instructions
+  ├── ARCHITECTURE.txt          # This file
+  ├── package.json              # Root workspace config
+  ├── pnpm-workspace.yaml       # pnpm workspace definition
+  └── tsconfig.base.json        # Shared TypeScript config
+
+================================================================================
+4. SHARED LIBRARY (@org/shared)
+================================================================================
+
+The shared library contains everything reusable across services. Services
+import contracts via `import { ... } from '@org/shared'`.
+
+Constants:
+  - Service names: AUTH_SERVICE, AUDIT_SERVICE, TENANT_SERVICE,
+    USERS_SERVICE, LICENSE_SERVICE
+  - TCP ports: 3001–3005
+  - HTTP ports: 4001–4005
+
+Enums:
+  - TenantStatus (ACTIVE, INACTIVE, SUSPENDED)
+  - QuotaType (SHARED, INDIVIDUAL)
+  - BillingCycle (MONTHLY, ANNUALLY)
+  - BillingType (PLAN_SUBSCRIPTION, TOP_UP)
+  - PaymentStatus (PENDING, PAID, FAILED, REFUNDED)
+  - PaymentMethod (CARD, BANK, UPI)
+  - InvoiceStatus (DRAFT, SENT, PAID, OVERDUE, CANCELLED)
+  - PlanChangeType (INITIAL, UPGRADE, DOWNGRADE)
+  - UserStatus (ACTIVE, INACTIVE, SUSPENDED)
+  - AuthType (PASSWORD, SSO_GOOGLE, SSO_MICROSOFT, SAML, MAGIC_LINK, LDAP)
+  - SsoProviderType (GOOGLE, MICROSOFT, SAML, OKTA, LDAP, CUSTOM)
+  - MfaType (EMAIL_OTP, SMS_OTP, AUTHENTICATOR_APP)
+  - LoginAttemptStatus (SUCCESS, FAILED, BLOCKED)
+  - TokenStatus (ACTIVE, REVOKED, EXPIRED)
+  - FeatureStatus (ACTIVE, INACTIVE, DEPRECATED)
+  - TopUpStatus (ACTIVE, EXPIRED, FULLY_CONSUMED)
+
+Modules:
+  - BasePrismaService — base class for per-service Prisma clients
+  - PrismaModule.forRoot() — dynamic module for Prisma DI
+  - HealthModule.forRootAsync() — health check with DB, memory, uptime
+  - setupSwagger() — auto-disabled in production (NODE_ENV check)
+
+DTOs:
+  - Audit: CreateAuditLogDto, QueryAuditLogDto
+  - Tenant: CreateTenantDto, UpdateTenantDto, QueryTenantDto,
+    CreateBillingDto, CreateInvoiceDto, CreatePlanHistoryDto,
+    QueryPlanHistoryDto, UpsertTenantBrandingDto, UpsertEmailTemplateDto,
+    QueryEmailTemplateDto
+  - Users: CreateUserDto, UpdateUserDto, QueryUserDto, CreateRoleDto,
+    QueryRoleDto, CreateGroupDto, QueryGroupDto, CreateModuleDto,
+    CreatePermissionDto
+  - Auth: LoginDto, RefreshTokenDto, RegisterCredentialsDto,
+    ChangePasswordDto
+  - License: CreateFeatureDto, CreatePlanDto, CreatePlanPricingDto,
+    SetPlanQuotaDto, CheckQuotaDto, RecordUsageDto, QueryLicenseDto
+
+Interfaces:
+  - Tenant, TenantPlanHistory, TenantBilling, Invoice, TenantBranding,
+    EmailTemplate
+  - User (id, email, tenantId, firstName, lastName, status, roles)
+  - AuthUser (id, tenantId, email, roles, status)
+  - FeatureRegistry, Plan, PlanFeatureQuota, PlanPricing,
+    TopUpPricing, QuotaTopUp, UsageLedger, QuotaCheckResult
+
+================================================================================
+5. SERVICE DETAILS
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+5.1  AUDIT SERVICE
+────────────────────────────────────────────────────────────────────────────────
+
+Purpose:
+  Centralized audit logging for all microservices. Any service can publish
+  an audit event via TCP, and this service persists it with full detail
+  (old/new values, metadata, IP address, user agent).
+
+Database: audit_db (2 tables)
+  - AuditLog:       Core log (userId, action, resource, resourceId, status,
+                    ipAddress, userAgent, duration, source, timestamp)
+  - AuditLogDetail: Extended 1:1 detail (oldValue JSON, newValue JSON,
+                    metadata JSON)
+
+HTTP Endpoints:
+  GET  /audit-logs      Query audit logs (paginated, filters: userId,
+                        action, resource, status, dateFrom, dateTo)
+  GET  /audit-logs/:id  Get single audit log by UUID (includes detail)
+
+TCP Patterns:
+  audit_log_created     EventPattern — fire-and-forget audit log creation
+  get_audit_logs        Query logs with filters (returns PaginatedResponse)
+  get_audit_log_by_id   Fetch single log by ID
+
+Dependencies: None (standalone)
+
+────────────────────────────────────────────────────────────────────────────────
+5.2  TENANT SERVICE
+────────────────────────────────────────────────────────────────────────────────
+
+Purpose:
+  Manages tenant lifecycle, subscription plans, billing records, and
+  invoices. This is the central registry that other services reference
+  for tenant existence and status.
+
+Database: tenant_db (6 tables)
+  - Tenant:            Core tenant (planId, quotaType, billingCycle,
+                       cycleStartDate, tenantName, domain, status, maxUsers)
+  - TenantPlanHistory: Plan change audit trail (changeType: INITIAL/
+                       UPGRADE/DOWNGRADE, startDate, endDate)
+  - TenantBilling:     Billing records (billingType, amount, currency,
+                       paymentStatus, paymentMethod, transactionId)
+  - Invoice:           Generated invoices (invoiceNumber, amount, taxAmount,
+                       totalAmount, dueDate, status, pdfUrl)
+  - TenantBranding:    Per-tenant branding (companyName, logoUrl, primaryColor,
+                       secondaryColor, footerText). Unique on tenantId. Supports
+                       fallback: tenant → global (tenantId=0) → hardcoded default.
+  - EmailTemplate:     Per-tenant email templates (type: WELCOME/PASSWORD_RESET/
+                       PASSWORD_CHANGED, subject, htmlBody, isActive). Unique on
+                       [tenantId, type]. Supports fallback like TenantBranding.
+
+HTTP Endpoints:
+  POST   /tenants           Create a tenant
+  GET    /tenants           Query tenants (filters: tenantName, domain,
+                            status, planId, page, limit)
+  GET    /tenants/:id       Get tenant by UUID
+  PATCH  /tenants/:id       Update tenant
+
+  POST   /billings          Create billing record
+  GET    /billings          Query billings (filters: tenantId, paymentStatus,
+                            page, limit)
+  GET    /billings/:id      Get billing by UUID
+
+  POST   /invoices          Create invoice
+  GET    /invoices          Query invoices (filters: tenantId, status,
+                            page, limit)
+  GET    /invoices/:id      Get invoice by UUID
+
+  GET    /plan-history      Query plan history (filters: tenantId, page, limit)
+
+  PUT    /branding/:tenantId    Upsert tenant branding
+  GET    /branding/:tenantId    Get tenant branding
+
+  PUT    /email-templates              Upsert email template
+  GET    /email-templates/tenant/:id   Get all templates for tenant
+  GET    /email-templates              Query templates (filters: tenantId, type,
+                                       page, limit)
+  DELETE /email-templates/:tenantId/:type  Delete template (reset to default)
+
+TCP Patterns:
+  get_tenant          Fetch tenant by ID (used by Auth, License services)
+  get_tenant_status   Get tenant ID + status (used by Auth for login check)
+  create_tenant       Create tenant via inter-service call
+  update_tenant       Update tenant via inter-service call
+  get_tenant_billing  Fetch billing by ID
+  create_billing      Create billing via inter-service call
+  get_invoice         Fetch invoice by ID
+  create_invoice      Create invoice via inter-service call
+  get_plan_history    Query plan change history
+  create_plan_history Create plan history entry
+  upsert_tenant_branding    Create/update tenant branding
+  get_tenant_branding       Get branding for a tenant
+  get_effective_branding    Get branding with fallback (tenant → global → default)
+  upsert_email_template     Create/update email template
+  get_tenant_email_templates  Get all templates for a tenant
+  get_effective_email_template  Get template with fallback (tenant → global)
+  query_email_templates     Query templates with filters
+  delete_email_template     Delete template (reset to default)
+
+Dependencies: None (standalone — other services depend on this)
+
+────────────────────────────────────────────────────────────────────────────────
+5.3  USERS SERVICE
+────────────────────────────────────────────────────────────────────────────────
+
+Purpose:
+  Manages users, roles, groups, and the full RBAC hierarchy. Provides
+  two levels of entities:
+    - Global masters: Modules and Permissions (shared across all tenants)
+    - Tenant-scoped: Roles, Groups, Users (isolated per tenant)
+
+  RBAC Hierarchy:
+    Module → Permission → ModulePermission (junction)
+    Role → RoleModulePermission (which module-permissions a role has)
+    Group → GroupRole (which roles a group has)
+    User → UserRole (direct role assignment)
+    User → UserGroup → GroupRole (inherited roles via groups)
+
+Database: users_db (10 tables)
+  Global:
+  - ModuleMaster:         Application modules (unique moduleKey)
+  - PermissionMaster:     Permissions (unique permissionKey)
+  - ModulePermission:     Module-Permission junction (composite PK)
+
+  Tenant-scoped:
+  - Role:                 Roles (unique [tenantId, roleName])
+  - RoleModulePermission: Role-Module-Permission junction (composite PK)
+  - GroupTable:           Groups (unique [tenantId, groupName])
+  - GroupRole:            Group-Role junction (composite PK)
+  - UserTable:            Users (unique [tenantId, email])
+  - UserRole:             User-Role junction (composite PK)
+  - UserGroup:            User-Group junction (composite PK)
+
+HTTP Endpoints:
+
+  Users:
+    POST   /users                    Create user
+    GET    /users                    Query users (filters: tenantId, email,
+                                    status, page, limit)
+    GET    /users/:id                Get user by UUID
+    PATCH  /users/:id                Update user
+    GET    /users/:id/roles          Get user with assigned roles
+    POST   /users/:id/roles          Assign roles to user
+    DELETE /users/:id/roles          Remove roles from user
+    POST   /users/:id/groups         Assign groups to user
+    DELETE /users/:id/groups         Remove groups from user
+
+  Roles:
+    POST   /roles                    Create role (tenant-scoped)
+    GET    /roles                    Query roles (filters: tenantId, page, limit)
+    GET    /roles/:id                Get role by UUID
+    PATCH  /roles/:id                Update role
+    GET    /roles/:id/permissions    Get role with all module-permissions
+    POST   /roles/:id/permissions    Assign module-permissions to role
+    DELETE /roles/:id/permissions/:moduleId/:permissionId
+                                    Remove a specific permission from role
+
+  Groups:
+    POST   /groups                   Create group (tenant-scoped)
+    GET    /groups                   Query groups (filters: tenantId, page, limit)
+    GET    /groups/:id               Get group by UUID
+    PATCH  /groups/:id               Update group
+    GET    /groups/:id/roles         Get group with assigned roles
+    POST   /groups/:id/roles         Assign roles to group
+    DELETE /groups/:id/roles         Remove roles from group
+
+  Modules (global):
+    POST   /modules                  Create module
+    GET    /modules                  List modules (page, limit)
+    GET    /modules/:id              Get module by UUID
+    PATCH  /modules/:id              Update module
+    GET    /modules/:id/permissions  Get module with permissions
+    POST   /modules/:id/permissions  Assign permissions to module
+    DELETE /modules/:id/permissions/:permissionId
+                                    Remove permission from module
+
+  Permissions (global):
+    POST   /permissions              Create permission
+    GET    /permissions              List permissions (page, limit)
+    GET    /permissions/:id          Get permission by UUID
+    PATCH  /permissions/:id          Update permission
+
+TCP Patterns:
+  get_user_by_id     Fetch user by UUID
+  get_user_by_email  Fetch user by email within a tenant
+  get_user_roles     Get user with all directly assigned roles
+  get_effective_roles  Get user's effective roles (direct + group-inherited,
+                       deduplicated). Uses findByIdWithEffectiveRoles() to
+                       merge roles assigned directly to the user with roles
+                       inherited from the user's groups.
+  check_permission   Check if a role has a specific module-permission
+  get_user_effective_permissions
+                     Get user's effective permissions across all modules.
+                     Calls getEffectiveRoles() to merge direct + group roles,
+                     then findPermissionsByRoleIds() to resolve all
+                     RoleModulePermission entries. Returns deduplicated
+                     result in two shapes:
+                       modules[]  — per-module permission list (for UI menus)
+                       permissionMap — { moduleKey: [...perms] } (for O(1)
+                                       access checks in route guards)
+
+Dependencies: None (standalone — Auth service depends on this)
+
+────────────────────────────────────────────────────────────────────────────────
+5.4  AUTH SERVICE
+────────────────────────────────────────────────────────────────────────────────
+
+Purpose:
+  Handles authentication, JWT token management, credential storage,
+  password policies, MFA, SSO configuration, and login attempt tracking.
+  Acts as the security gateway for the entire platform.
+
+  Login flow calls Tenant Service (to verify tenant exists and is active)
+  and Users Service (to get user by email and fetch effective roles).
+  Both login() and refreshTokens() use get_effective_roles (instead of
+  get_user_roles) to retrieve the merged set of direct + group-inherited
+  roles, deduplicated, ensuring JWT tokens always reflect the full RBAC
+  picture.
+
+Database: auth_db (7 tables)
+  - TenantAuthConfig:  Per-tenant auth policies (MFA mandatory, password
+                       rules, lockout settings, session timeout, LDAP sync)
+  - SsoProviderConfig: SSO provider configs per tenant (Google, Microsoft,
+                       SAML, Okta, LDAP, Custom)
+  - UserCredentials:   Per-user auth credentials (password hash or SSO
+                       provider link, status: ACTIVE/INACTIVE/LOCKED)
+  - PasswordHistory:   Password change history (for reuse prevention)
+  - RefreshToken:      JWT refresh tokens with device/IP tracking and
+                       status (ACTIVE/REVOKED/EXPIRED)
+  - MfaConfig:         Per-user MFA setup (type, secret key, phone,
+                       verification status)
+  - LoginAttempt:      Login audit trail (success/failed/blocked, IP,
+                       device info, failure reason)
+
+HTTP Endpoints:
+
+  Auth:
+    POST /auth/login     Authenticate with email + password + domain
+                         Returns: accessToken, refreshToken, expiresIn, user
+    POST /auth/refresh   Exchange refresh token for new token pair
+    POST /auth/logout    Revoke all refresh tokens for a user
+
+  Credentials:
+    POST  /credentials/register               Register password or SSO creds
+    PATCH /credentials/:userId/change-password Change user password
+
+  MFA:
+    POST   /mfa/:userId/setup    Initialize MFA (generates secret key)
+    POST   /mfa/:userId/verify   Verify MFA code to complete setup
+    DELETE /mfa/:userId          Disable MFA for user
+
+  Auth Config:
+    GET   /auth-config/:tenantId              Get tenant auth config
+    POST  /auth-config                        Create tenant auth config
+    PATCH /auth-config/:tenantId              Update tenant auth config
+    GET   /auth-config/:tenantId/sso-providers List SSO providers for tenant
+    POST  /auth-config/sso-providers          Create SSO provider config
+    PATCH /auth-config/sso-providers/:id      Update SSO provider config
+
+TCP Patterns:
+  validate_user    Validate JWT token, return { valid, user }
+  validate_token   Validate JWT token, return AuthUser or null
+  get_auth_config  Get tenant auth configuration
+
+Dependencies:
+  - Tenant Service (TCP 3003) — verify tenant exists + check tenant status
+  - Users Service (TCP 3004) — get user by email, get effective roles
+    (direct + group-inherited)
+
+────────────────────────────────────────────────────────────────────────────────
+5.5  LICENSE SERVICE
+────────────────────────────────────────────────────────────────────────────────
+
+Purpose:
+  Manages subscription plans, feature quotas, pricing, usage metering,
+  and top-up purchases. Uses Redis for real-time quota tracking with
+  PostgreSQL as the source of truth.
+
+  Quota check flow:
+    1. Look up feature by key
+    2. Get tenant's plan from Tenant Service (via TCP)
+    3. Get plan's quota limit for the feature
+    4. Check Redis for current consumption (fallback to DB)
+    5. If plan quota exhausted, check active top-ups
+    6. Return allowed/denied with remaining quota
+
+Database: license_db (7 tables)
+  - FeatureRegistry:   Global feature definitions (featureKey, featureName)
+  - Plan:              Subscription plans (planName, description)
+  - PlanFeatureQuota:  Quota per feature per plan (null = unlimited)
+  - PlanPricing:       Pricing by billing cycle (unique [planId, cycle, currency])
+  - TopUpPricing:      Pricing for quota top-up purchases
+  - QuotaTopUp:        Actual purchased top-ups (tracks consumed vs total)
+  - UsageLedger:       Usage tracking per tenant/feature/billing cycle
+
+PLAN ID CONTRACT
+  TENANT.PLAN_ID stores the plan NAME as a string (e.g. "PROFESSIONAL",
+  "BUSINESS", "FREE"), NOT the numeric Plan.id FK. The numeric FK only
+  exists inside license-service for the join to PLAN_FEATURE_QUOTA.
+
+  Canonical tier ordering (used by tenant-service.inferPlanChangeType):
+    FREE < STARTER < BASIC < BUSINESS < PROFESSIONAL < ENTERPRISE
+
+  Reserved values: "ON_PREM" (on-prem tenants), "SYSTEM" (system tenant ID 0).
+
+  Defense in depth (admin-ui → tenant-service):
+    1. Zod schema (admin-ui/.../tenant.schema.ts) regex /^[A-Z_]+$/
+    2. Dropdown SelectItem value={plan.planName} (NOT plan.id)
+    3. Shared DTOs @Matches(/^[A-Z][A-Z_]*$/) on planId + nextPlanId
+    4. tenant-service.updateTenant() calls get_plan_by_name before write
+    5. tenants.repository.assertPlanIdIsNotNumeric() belt-and-braces guard
+    6. license-service.quota.service.ts logs WARN on legacy numeric fallback
+
+  Migration: tools/fix-tenant-plan-ids.ts (dry-run by default) converts
+  any legacy numeric planIds to their canonical plan names and writes a
+  TENANT_PLAN_HISTORY(INITIAL) correction row.
+
+Cache: Redis
+  Key pattern: quota:{tenantId}:{featureKey}
+  Value: current consumption count (integer)
+  - Read: Redis first, DB fallback (then warm Redis)
+  - Write: Increment Redis counter + write to UsageLedger
+
+HTTP Endpoints:
+
+  Features:
+    POST  /features      Create feature
+    GET   /features      Query features (filters: featureKey, status, page, limit)
+    GET   /features/:id  Get feature by UUID
+    PATCH /features/:id  Update feature
+
+  Plans:
+    POST   /plans                          Create plan
+    GET    /plans                          Query plans (filters: planName,
+                                          status, page, limit)
+    GET    /plans/:id                      Get plan with quotas + pricings
+    PATCH  /plans/:id                      Update plan
+    GET    /plans/:id/quotas               Get feature quotas for plan
+    POST   /plans/:id/quotas               Set feature quota for plan
+    DELETE /plans/:id/quotas/:featureId    Remove feature quota
+
+  Pricing:
+    POST  /pricing/plan         Create plan pricing
+    GET   /pricing/plan         Query plan pricings (filters: planId,
+                                billingCycle, status, page, limit)
+    GET   /pricing/plan/:id     Get plan pricing by UUID
+    PATCH /pricing/plan/:id     Update plan pricing
+    POST  /pricing/top-up       Create top-up pricing
+    GET   /pricing/top-up       Query top-up pricings (filters: featureId,
+                                status, page, limit)
+    GET   /pricing/top-up/:id   Get top-up pricing by UUID
+    PATCH /pricing/top-up/:id   Update top-up pricing
+
+  Quota:
+    GET  /quota/check    Check quota (query: tenantId, featureKey, userId)
+                         Returns: { allowed, consumed, limit, remaining, source }
+    POST /quota/top-up   Purchase quota top-up
+
+  Usage:
+    POST /usage/record   Record a usage event (increments Redis + DB)
+    GET  /usage          Query usage records (filters: tenantId, featureId,
+                         userId, page, limit)
+
+TCP Patterns:
+  get_feature        Fetch feature by ID
+  get_feature_by_key Fetch feature by key
+  get_plan           Fetch plan by numeric ID (with quotas + pricings)
+  get_plan_by_name   Fetch plan by NAME string (e.g. "PROFESSIONAL"). This is
+                     the canonical resolver used by tenant-service and
+                     admin-portal because TENANT.PLAN_ID stores plan names,
+                     not numeric IDs.
+  get_plan_quotas    Get all feature quotas for a plan
+  get_plan_pricing   Get all pricing variants for a plan
+  check_quota        Check if tenant has quota for a feature
+  record_usage       Record a usage event
+  query_licenses     Query all licenses across tenants (filters: tenantId,
+                     planId, status, startDate, endDate, page, limit).
+                     Returns PaginatedResponse.
+
+Dependencies:
+  - Tenant Service (TCP 3003) — get tenant plan, billing cycle, cycle start
+
+================================================================================
+6. INTER-SERVICE COMMUNICATION
+================================================================================
+
+All inter-service calls use NestJS TCP transport (@nestjs/microservices).
+Services register clients via ClientsModule.register() and send messages
+using ClientProxy.send() with firstValueFrom() for request-response.
+
+  ┌───────────────┐           ┌─────────────────┐
+  │ Auth Service   │──TCP────▶│ Tenant Service   │
+  │ (port 3001)    │           │ (port 3003)      │
+  │                │           │                  │
+  │  get_tenant    │           │  Returns tenant  │
+  │  get_tenant_   │           │  data + status   │
+  │  status        │           │                  │
+  └───────┬───────┘           └──────────────────┘
+          │
+          │  TCP
+          ▼
+  ┌───────────────┐
+  │ Users Service  │
+  │ (port 3004)    │
+  │                │
+  │ get_user_by_      │
+  │ email             │
+  │ get_effective_    │
+  │ roles             │
+  └───────────────────┘
+
+  ┌───────────────┐           ┌─────────────────┐
+  │License Service │──TCP────▶│ Tenant Service   │
+  │ (port 3005)    │           │ (port 3003)      │
+  │                │           │                  │
+  │  get_tenant    │           │  Returns tenant  │
+  │  (for planId,  │           │  with planId,    │
+  │   cycle info)  │           │  cycleStartDate  │
+  └───────────────┘           └──────────────────┘
+
+  ┌───────────────┐
+  │ Any Service    │──TCP(event)──▶┌──────────────┐
+  │                │                │Audit Service │
+  │ audit_log_     │                │ (port 3002)  │
+  │ created        │                │              │
+  └───────────────┘                └──────────────┘
+
+Communication patterns:
+  - MessagePattern (request-response): Used for queries (get_tenant,
+    get_user_by_email, check_quota). Caller awaits response.
+  - EventPattern (fire-and-forget): Used for audit logging
+    (audit_log_created). Caller does not await response.
+
+================================================================================
+7. AUTHENTICATION & AUTHORIZATION FLOW
+================================================================================
+
+Login Flow (POST /auth/login):
+──────────────────────────────
+
+  Client                Auth Service        Tenant Service      Users Service
+    │                       │                     │                   │
+    │  POST /auth/login     │                     │                   │
+    │  {email, password,    │                     │                   │
+    │   domain}             │                     │                   │
+    │──────────────────────▶│                     │                   │
+    │                       │                     │                   │
+    │                       │  TCP: get_tenant    │                   │
+    │                       │  {domain}           │                   │
+    │                       │────────────────────▶│                   │
+    │                       │◀────────────────────│                   │
+    │                       │  {id, status, ...}  │                   │
+    │                       │                     │                   │
+    │                       │  TCP: get_tenant_status                 │
+    │                       │  {id}               │                   │
+    │                       │────────────────────▶│                   │
+    │                       │◀────────────────────│                   │
+    │                       │  {status: "ACTIVE"} │                   │
+    │                       │                     │                   │
+    │                       │  Check lockout (auth_db)                │
+    │                       │  count recent failed attempts           │
+    │                       │                     │                   │
+    │                       │  TCP: get_user_by_email                 │
+    │                       │  {tenantId, email}  │                   │
+    │                       │────────────────────────────────────────▶│
+    │                       │◀───────────────────────────────────────│
+    │                       │  {id, email, ...}   │                   │
+    │                       │                     │                   │
+    │                       │  Verify password (bcryptjs)             │
+    │                       │                     │                   │
+    │                       │  TCP: get_effective_roles                │
+    │                       │  {id}               │                   │
+    │                       │────────────────────────────────────────▶│
+    │                       │◀───────────────────────────────────────│
+    │                       │  {roles: [...]}     │  (direct + group  │
+    │                       │  (deduplicated)     │   inherited)      │
+    │                       │                     │                   │
+    │                       │  Generate JWT access token              │
+    │                       │  Generate refresh token (random hex)    │
+    │                       │  Store refresh token hash in auth_db    │
+    │                       │  Log successful login attempt           │
+    │                       │                     │                   │
+    │  {accessToken,        │                     │                   │
+    │   refreshToken,       │                     │                   │
+    │   expiresIn,          │                     │                   │
+    │   user: {id, email,   │                     │                   │
+    │    tenantId, roles}}  │                     │                   │
+    │◀──────────────────────│                     │                   │
+
+JWT Token Payload:
+  {
+    sub: userId,
+    email: userEmail,
+    tenantId: tenantId,
+    roles: ["ADMIN", "USER"]   // effective roles: direct + group-inherited,
+                                // deduplicated. Populated via get_effective_roles.
+  }
+
+Token Refresh (POST /auth/refresh):
+  1. Hash incoming refresh token with SHA-256
+  2. Look up hash in auth_db refresh_tokens table
+  3. Verify not expired and status is ACTIVE
+  4. Revoke old refresh token
+  5. TCP: get_effective_roles to fetch current effective roles
+     (direct + group-inherited, deduplicated)
+  6. Issue new access + refresh tokens with up-to-date roles
+  7. Return new token pair
+
+Security Features:
+  - Account lockout after N failed attempts (configurable per tenant)
+  - Lockout duration configurable per tenant
+  - IP address and device info logged on every attempt
+  - Password history check on change (prevents reuse)
+  - Refresh token rotation (old token revoked on each refresh)
+  - Per-tenant password policy (min length, uppercase, number, special char)
+
+================================================================================
+8. QUOTA & USAGE METERING FLOW
+================================================================================
+
+Quota Check (GET /quota/check?tenantId=...&featureKey=...):
+───────────────────────────────────────────────────────────
+
+  Client              License Service           Redis        Tenant Service
+    │                       │                     │                │
+    │  GET /quota/check     │                     │                │
+    │  ?tenantId=X          │                     │                │
+    │  &featureKey=Y        │                     │                │
+    │──────────────────────▶│                     │                │
+    │                       │                     │                │
+    │                       │  Lookup feature     │                │
+    │                       │  by key (DB)        │                │
+    │                       │                     │                │
+    │                       │  TCP: get_tenant    │                │
+    │                       │  {id: X}            │                │
+    │                       │────────────────────────────────────▶│
+    │                       │◀───────────────────────────────────│
+    │                       │  {planId, cycle...} │                │
+    │                       │                     │                │
+    │                       │  Get plan quota     │                │
+    │                       │  for feature (DB)   │                │
+    │                       │                     │                │
+    │                       │  GET quota:X:Y      │                │
+    │                       │────────────────────▶│                │
+    │                       │◀────────────────────│                │
+    │                       │  consumed = 42      │                │
+    │                       │                     │                │
+    │                       │  If null (unlimited) → allowed       │
+    │                       │  If consumed < limit → allowed       │
+    │                       │  If consumed >= limit:               │
+    │                       │    Check active top-ups (DB)         │
+    │                       │    If top-up remaining → allowed     │
+    │                       │    Else → denied                     │
+    │                       │                     │                │
+    │  { allowed: true,     │                     │                │
+    │    consumed: 42,      │                     │                │
+    │    limit: 1000,       │                     │                │
+    │    remaining: 958,    │                     │                │
+    │    source: "plan" }   │                     │                │
+    │◀──────────────────────│                     │                │
+
+Usage Recording (POST /usage/record):
+─────────────────────────────────────
+
+  1. Resolve feature by key (DB)
+  2. Get tenant cycle info from Tenant Service (TCP)
+  3. Increment Redis counter: INCR quota:{tenantId}:{featureKey}
+  4. Upsert usage_ledger entry for current billing cycle (+1)
+  5. Return { recorded: true }
+
+Redis Key Pattern:
+  quota:{tenantId}:{featureKey}  →  integer (current consumption count)
+
+================================================================================
+9. DATABASE DESIGN SUMMARY
+================================================================================
+
+Total Tables: 30 across 5 databases
+
+  audit_db   (2 tables):  AuditLog, AuditLogDetail
+  tenant_db  (4 tables):  Tenant, TenantPlanHistory, TenantBilling, Invoice
+  users_db   (10 tables): ModuleMaster, PermissionMaster, ModulePermission,
+                          Role, RoleModulePermission, GroupTable, GroupRole,
+                          UserTable, UserRole, UserGroup
+  auth_db    (7 tables):  TenantAuthConfig, SsoProviderConfig,
+                          UserCredentials, PasswordHistory, RefreshToken,
+                          MfaConfig, LoginAttempt
+  license_db (7 tables):  FeatureRegistry, Plan, PlanFeatureQuota,
+                          PlanPricing, TopUpPricing, QuotaTopUp, UsageLedger
+
+Primary Key Strategy: UUIDs (uuid_generate_v4) on all tables
+Multi-Tenancy: tenantId column on all tenant-scoped tables (not on global
+  masters like ModuleMaster, PermissionMaster, FeatureRegistry, Plan)
+Junction Tables: Composite primary keys (@@id) with reverse-direction
+  indexes for efficient lookups from either side
+
+Index Strategy:
+  - Every FK column is indexed (either via @@id, @@unique, or @@index)
+  - Composite indexes on common multi-column filters (tenantId + status)
+  - Junction table reverse-direction indexes (composite PK only indexes
+    leftmost columns in PostgreSQL B-tree)
+  - Timestamp indexes for range queries and cleanup crons
+  - Security indexes (tenantId + email + attemptedAt for brute force detection)
+  - Redis key indexes (tenantId + featureId + status for active top-up queries)
+
+================================================================================
+10. HOW TO RUN (USER MANUAL)
+================================================================================
+
+Prerequisites:
+  - Node.js >= 18
+  - pnpm >= 8
+  - PostgreSQL running locally (default: localhost:5432)
+  - Redis running locally (default: localhost:6379) — for License Service
+  - Create databases:
+      createdb audit_db
+      createdb tenant_db
+      createdb users_db
+      createdb auth_db
+      createdb license_db
+
+Setup:
+  1. Install dependencies:
+       pnpm install
+
+  2. Run migrations for all services:
+       pnpm nx run audit-service:prisma:migrate:dev
+       pnpm nx run tenant-service:prisma:migrate:dev
+       pnpm nx run users-service:prisma:migrate:dev
+       pnpm nx run auth-service:prisma:migrate:dev
+       pnpm nx run license-service:prisma:migrate:dev
+
+  3. Build all services:
+       pnpm nx run-many --target=build --all
+
+Running Services:
+  Open 5 terminal windows and run one service per terminal:
+
+    Terminal 1:  pnpm nx run audit-service:serve
+    Terminal 2:  pnpm nx run tenant-service:serve
+    Terminal 3:  pnpm nx run users-service:serve
+    Terminal 4:  pnpm nx run auth-service:serve
+    Terminal 5:  pnpm nx run license-service:serve
+
+  Note: Auth Service depends on Tenant + Users services being running.
+        License Service depends on Tenant Service being running.
+        Start order: Audit → Tenant → Users → Auth → License
+
+Verify:
+  - Health checks:
+      curl http://localhost:4001/health   # Auth
+      curl http://localhost:4002/health   # Audit
+      curl http://localhost:4003/health   # Tenant
+      curl http://localhost:4004/health   # Users
+      curl http://localhost:4005/health   # License
+
+  - Swagger UI (browser):
+      http://localhost:4001/api           # Auth Service API docs
+      http://localhost:4002/api           # Audit Service API docs
+      http://localhost:4003/api           # Tenant Service API docs
+      http://localhost:4004/api           # Users Service API docs
+      http://localhost:4005/api           # License Service API docs
+
+Prisma Studio (visual database browser, dev only):
+  pnpm nx run tenant-service:prisma:studio
+  (Opens at http://localhost:5555)
+
+Useful Nx Commands:
+  pnpm nx run {service}:build                  Build a service
+  pnpm nx run {service}:serve                  Build + start with watch
+  pnpm nx run {service}:prisma:generate        Regenerate Prisma client
+  pnpm nx run {service}:prisma:migrate:dev     Create + apply migration
+  pnpm nx run {service}:prisma:migrate:deploy  Apply migrations (production)
+  pnpm nx run {service}:prisma:studio          Open Prisma Studio
+  pnpm nx run-many --target=build --all        Build all services
+  pnpm nx graph                                Visualize dependency graph
+
+================================================================================
+11. API QUICK REFERENCE
+================================================================================
+
+Complete endpoint listing (81 HTTP endpoints + 25 TCP patterns):
+
+AUTH SERVICE (http://localhost:4001)
+  POST   /auth/login
+  POST   /auth/refresh
+  POST   /auth/logout
+  POST   /credentials/register
+  PATCH  /credentials/:userId/change-password
+  POST   /mfa/:userId/setup
+  POST   /mfa/:userId/verify
+  DELETE /mfa/:userId
+  GET    /auth-config/:tenantId
+  POST   /auth-config
+  PATCH  /auth-config/:tenantId
+  GET    /auth-config/:tenantId/sso-providers
+  POST   /auth-config/sso-providers
+  PATCH  /auth-config/sso-providers/:id
+  GET    /health
+
+AUDIT SERVICE (http://localhost:4002)
+  GET    /audit-logs
+  GET    /audit-logs/:id
+  GET    /health
+
+TENANT SERVICE (http://localhost:4003)
+  POST   /tenants
+  GET    /tenants
+  GET    /tenants/:id
+  PATCH  /tenants/:id
+  POST   /billings
+  GET    /billings
+  GET    /billings/:id
+  POST   /invoices
+  GET    /invoices
+  GET    /invoices/:id
+  GET    /plan-history
+  GET    /health
+
+USERS SERVICE (http://localhost:4004)
+  POST   /users
+  GET    /users
+  GET    /users/:id
+  PATCH  /users/:id
+  GET    /users/:id/roles
+  POST   /users/:id/roles
+  DELETE /users/:id/roles
+  POST   /users/:id/groups
+  DELETE /users/:id/groups
+  POST   /roles
+  GET    /roles
+  GET    /roles/:id
+  PATCH  /roles/:id
+  GET    /roles/:id/permissions
+  POST   /roles/:id/permissions
+  DELETE /roles/:id/permissions/:moduleId/:permissionId
+  POST   /groups
+  GET    /groups
+  GET    /groups/:id
+  PATCH  /groups/:id
+  GET    /groups/:id/roles
+  POST   /groups/:id/roles
+  DELETE /groups/:id/roles
+  POST   /modules
+  GET    /modules
+  GET    /modules/:id
+  PATCH  /modules/:id
+  GET    /modules/:id/permissions
+  POST   /modules/:id/permissions
+  DELETE /modules/:id/permissions/:permissionId
+  POST   /permissions
+  GET    /permissions
+  GET    /permissions/:id
+  PATCH  /permissions/:id
+  GET    /health
+
+LICENSE SERVICE (http://localhost:4005)
+  POST   /features
+  GET    /features
+  GET    /features/:id
+  PATCH  /features/:id
+  POST   /plans
+  GET    /plans
+  GET    /plans/:id
+  PATCH  /plans/:id
+  GET    /plans/:id/quotas
+  POST   /plans/:id/quotas
+  DELETE /plans/:id/quotas/:featureId
+  POST   /pricing/plan
+  GET    /pricing/plan
+  GET    /pricing/plan/:id
+  PATCH  /pricing/plan/:id
+  POST   /pricing/top-up
+  GET    /pricing/top-up
+  GET    /pricing/top-up/:id
+  PATCH  /pricing/top-up/:id
+  GET    /quota/check
+  POST   /quota/top-up
+  POST   /usage/record
+  GET    /usage
+  GET    /health
+
+────────────────────────────────────────────────────────────────────────────────
+5.6  ADMIN-PORTAL (BFF — Backend-for-Frontend)
+────────────────────────────────────────────────────────────────────────────────
+
+Purpose:
+  BFF aggregator that orchestrates all 5 microservices for the admin
+  dashboard. Acts as single entry point for admin-ui, handling auth,
+  tenant scoping, and audit logging at the gateway level.
+
+Port: TCP 3006, HTTP 4006
+
+Modules:
+  - Dashboard: Aggregated stats from tenant + users + license services
+  - AdminTenants: Enriched tenant data (user counts, plan details)
+  - AdminUsers, AdminRoles, AdminGroups: Proxies to users-service
+  - AdminPermissions, AdminModules: Proxies to users-service (SuperAdmin)
+  - AdminPlans, AdminFeatures, AdminPricing: Proxies to license-service
+  - AdminQuota, AdminUsage: Proxies to license-service
+  - AdminAudit: Proxies to audit-service
+  - AdminNotifications: Proxies notification logs to audit-service
+  - AdminBranding: Proxies tenant branding to tenant-service
+  - AdminEmailTemplates: Proxies email template CRUD to tenant-service
+  - AdminSystem: License management, tenant subscription info
+  - BffAuth: Authentication flows for admin portal
+
+HTTP Endpoints:
+  GET    /admin/dashboard              Dashboard stats (tenant-scoped)
+  GET    /admin/dashboard/analytics    Global analytics (SuperAdmin only)
+  GET    /admin/dashboard/monthly-users Monthly user registrations
+
+  GET    /admin/tenants                List all tenants (SuperAdmin)
+  GET    /admin/tenants/:id            Tenant with enriched data
+  POST   /admin/tenants                Create tenant
+  PATCH  /admin/tenants/:id            Update tenant
+
+  GET    /admin/users/me/permissions    Current user's effective permissions
+                                      (reads userId from JWT, returns
+                                      { modules[], permissionMap })
+  GET|POST|PATCH /admin/users          User management proxies
+  GET|POST|PATCH /admin/roles          Role management proxies
+  GET|POST|PATCH /admin/groups         Group management proxies
+  GET|POST|PATCH /admin/permissions    Permission management proxies
+  GET|POST|PATCH /admin/modules        Module management proxies
+
+  GET|POST|PATCH /admin/plans          Plan management proxies
+  GET|POST|PATCH /admin/features       Feature management proxies
+  GET|POST|PATCH /admin/pricing        Pricing management proxies
+  GET|POST   /admin/quota              Quota check + top-up proxies
+  GET|POST   /admin/usage              Usage recording + query proxies
+  GET        /admin/usage/summary     Aggregated usage stats (by feature/tenant)
+  GET        /admin/usage/tenant-breakdown  Per-tenant feature breakdown
+                                      (consumed/limit/remaining for all features)
+                                      Query: tenantId (optional, all tenants if omitted)
+  GET        /admin/audit              Audit log proxies
+
+  GET    /admin/notifications          Query notification logs (tenant-scoped)
+  GET    /admin/notifications/:id      Get notification log by ID
+
+  GET    /admin/branding/:tenantId     Get branding for a tenant
+  PUT    /admin/branding/:tenantId     Upsert branding for a tenant
+
+  GET    /admin/email-templates        Query email templates (tenant-scoped)
+  GET    /admin/email-templates/tenant/:tenantId  Get all templates for tenant
+  PUT    /admin/email-templates        Upsert an email template
+  GET    /admin/email-templates/preview?tenantId&type  Get effective template
+  DELETE /admin/email-templates/:tenantId/:type   Delete email template
+
+  GET    /admin/tenants/licenses       List all on-prem tenant licenses
+                                      (cross-tenant, SuperAdmin only).
+                                      Query: tenantId, planId, status,
+                                      startDate, endDate, page, limit.
+
+  GET    /admin/system/license         License status (SuperAdmin)
+  POST   /admin/system/license/generate Generate on-prem license
+  GET    /admin/system/tenant-info     Current tenant subscription info
+  GET    /admin/system/features        Tenant features with quota status (TenantAdmin)
+  GET    /admin/system/usage           Tenant usage history (TenantAdmin)
+
+Security:
+  - All routes protected by @SuperAdminGuard or @TenantAdminGuard
+  - TenantScopeInterceptor enforces tenant boundaries
+  - AuditLoggingInterceptor logs all write operations to audit-service
+  - Sensitive field sanitization (password, token, secret, key)
+
+Dependencies:
+  - ALL 5 microservices via TCP ClientProxy
+
+────────────────────────────────────────────────────────────────────────────────
+5.7  ADMIN-UI (Next.js Frontend)
+────────────────────────────────────────────────────────────────────────────────
+
+Purpose:
+  React-based admin dashboard for managing the entire ix-copilot platform.
+  Communicates exclusively with admin-portal BFF.
+
+Port: HTTP 3100
+
+Technology: Next.js 16, React 19, Tailwind CSS 3.4
+
+Structure:
+  apps/admin-ui/src/
+  ├── app/              # Next.js app directory (pages + layouts)
+  ├── components/       # Reusable React components
+  ├── hooks/            # Custom React hooks
+  ├── lib/              # API client, utilities, data queries
+  ├── messages/         # i18n translations
+  ├── types/            # TypeScript interfaces
+  └── middleware.ts     # Auth + tenant resolution middleware
+
+Pages:
+  /admin/tenants         Tenant listing + detail views
+  /admin/licenses        Standalone licenses list page (SuperAdmin only).
+                         Shows all on-prem tenant licenses with
+                         tenant/plan/status/date filters, group-by-tenant
+                         toggle (collapsible accordion view), and download.
+
+Features:
+  - Multi-language support (i18n)
+  - Responsive UI with Tailwind CSS
+  - Tenant-aware routing and data scoping
+  - JWT token management in middleware
+  - API integration with admin-portal BFF at /admin/* endpoints
+
+================================================================================
+5.8  SHARED GUARDS, INTERCEPTORS & ON-PREM
+================================================================================
+
+Guards (libs/shared/src/lib/auth/):
+  - JwtAuthGuard:      Validates JWT bearer token. Skips TCP calls and
+                       @Public() decorated routes. Whitelists /health.
+  - SuperAdminGuard:   Requires system tenant (ID=0) + SUPER_ADMIN role.
+                       Auto-disabled when ON_PREM=true.
+  - TenantAdminGuard:  Requires TENANT_ADMIN or SUPER_ADMIN role.
+                       Skips RPC (TCP) calls.
+  - RolesGuard:        Enforces @Roles() decorator. SUPER_ADMIN bypasses.
+  - OnPremLicenseGuard: Validates .lic file (5-min cache). Cloud mode
+                       always passes. Whitelists /health + /on-prem/*.
+
+Interceptors:
+  - TenantScopeInterceptor: Extracts tenantId from JWT and injects it
+                            into request body/query. SUPER_ADMIN exempt
+                            (can operate across tenants).
+  - AuditLoggingInterceptor: Captures all POST/PATCH/PUT/DELETE requests.
+                             Parses admin paths to extract resource/action.
+                             Sanitizes sensitive fields. Emits audit_log_created
+                             event (fire-and-forget). Used by admin-portal.
+
+Middleware:
+  - CorrelationIdMiddleware: Reads X-Request-ID from incoming request or
+                             generates a UUID. Attaches to req.requestId and
+                             echoes back as x-request-id response header.
+                             Applied to all 6 services + admin-portal main.ts.
+                             Error responses include requestId field for tracing.
+
+Rate Limiting (admin-portal only — entry point):
+  - @nestjs/ThrottlerModule applied globally via APP_GUARD: ThrottlerGuard.
+  - short: 20 requests/second per IP
+  - medium: 300 requests/minute per IP
+  - Throttler guard runs BEFORE JwtAuthGuard (first in providers array).
+
+IDOR Protection:
+  - requestingTenantId passed through the full chain for all :id operations:
+    admin-portal controller (from JWT) → admin-portal service (TCP payload)
+    → backend TCP handler → backend service → repository (findFirst + tenantId filter)
+  - SUPER_ADMIN (tenantId=0) passes requestingTenantId=undefined → no filter applied.
+  - Affected services: users, roles, groups (users-service), tenants (tenant-service).
+  - All findById / findByIdWithRoles / findByIdWithGroups repository methods
+    use findFirst({ where: { id, tenantId } }) when tenantId is provided.
+
+TCP Timeout Utility:
+  - sendWithTimeout<T>(client, pattern, data, timeoutMs=5000) in @org/shared
+  - Wraps ClientProxy.send() with RxJS timeout() operator
+  - Throws HTTP 504 Gateway Timeout if downstream doesn't respond in time
+  - Import: import { sendWithTimeout } from '@org/shared'
+
+On-Prem License System:
+  - License files (.lic) contain JSON payload + RSA-SHA256 signature
+  - Payload: tenantId, planId, startDate, expiresAt, cycle, maxUsers, features[]
+  - Validation: validateLicenseFile() checks file, JSON, signature, expiry
+  - Guard caches validation for 5 minutes
+  - Key generation: tools/generate-license-keys.ts
+  - Env vars: ON_PREM, ONPREM_LICENSE_PRIVATE_KEY, ONPREM_LICENSE_PUBLIC_KEY
+
+On-Prem Tooling:
+  tools/generate-license-file.ts — Database-driven license generator
+    - Reads TENANT_ID from: CLI arg > TENANT_ID env var > delivery-package/.env
+    - Requires DATABASE_URL (PostgreSQL connection to license-service DB)
+    - Validates tenant exists in TENANTS table (errors if not found)
+    - Reads tenant's plan via TENANTS.PLAN_ID → PLAN → PLAN_FEATURE_QUOTA + FEATURE_REGISTRY
+    - Generates signed license.lic with features/quotas from DB
+    - Stores TENANT_LICENSE record in DB (version-tracked, marks prior as EXPIRED)
+    - Sets expiresAt to 1 year from creation
+    - Output: license/license.lic
+
+  tools/seed-onprem-admin.ts — On-prem seed script (8 steps)
+    1. Creates default tenant with explicit ID (from TENANT_ID env)
+    2. Creates TENANT_ADMIN role for the tenant
+    3. Creates default admin user
+    4. Assigns TENANT_ADMIN role to user
+    5. Creates password credentials (bcrypt hashed)
+    6. Imports license.lic into on-prem DB:
+       - Reads license from LICENSE_FILE_PATH (default: /opt/ix-copilot/license/license.lic)
+       - Seeds FEATURE_REGISTRY with features from license payload
+       - Seeds ON_PREM plan + PLAN_FEATURE_QUOTA entries
+       - Inserts TENANT_LICENSE record (visible in admin portal UI)
+    7. Seeds default branding:
+       - Global default (tenantId=0): companyName="IX Platform", primaryColor="#18181b"
+       - Tenant-specific (tenantId=TENANT_ID): companyName=TENANT_NAME
+       - Uses ON CONFLICT DO UPDATE (idempotent)
+    8. Seeds default email templates (tenantId=0):
+       - WELCOME, PASSWORD_RESET, PASSWORD_CHANGED
+       - Uses templates from default-templates.ts (Handlebars)
+       - Uses ON CONFLICT DO UPDATE (idempotent)
+    Env vars: DATABASE_URL, TENANT_ID, TENANT_NAME, TENANT_DOMAIN,
+              ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_FIRST_NAME,
+              ADMIN_LAST_NAME, LICENSE_FILE_PATH
+
+  tools/seed-default-templates.ts — Cloud seed script for templates/branding
+    - Seeds TENANT_BRANDINGS: 1 row for tenantId=0 (global default)
+      companyName="IX Platform", primaryColor="#18181b"
+    - Seeds EMAIL_TEMPLATES: 3 rows for tenantId=0 (global defaults)
+      WELCOME, PASSWORD_RESET, PASSWORD_CHANGED
+    - Uses ON CONFLICT DO UPDATE (idempotent, safe to re-run)
+    - Intended for cloud/SaaS deployments (on-prem uses seed-onprem-admin.ts)
+    Env vars: DATABASE_URL (or TENANT_DATABASE_URL)
+
+  tools/build-onprem-package.sh — Delivery package builder (7 steps)
+    Step 1: Prerequisite checks (Docker, Dockerfiles, Node.js)
+    Step 2: RSA key pair (generates if missing, reuses if present)
+    Step 3: License file from database (requires DATABASE_URL + TENANT_ID)
+    Step 4: Build 8 Docker images (linux/amd64)
+    Step 5: Assemble delivery-package/ (license, .env with unique secrets)
+    Step 6: Export Docker images to images.tar
+    Step 7: Create ix-copilot-onprem-<date>.tar.gz archive
+
+  delivery-package/docker-compose.yml — On-prem stack
+    - Seed container mounts license/license.lic and sets LICENSE_FILE_PATH
+    - Seed runs tools/seed-onprem-admin.ts after migrations complete
+    - Supports EXTERNAL_DB=true / EXTERNAL_REDIS=true for customer-managed infra
+    - Docker Compose profiles: managed-db (postgres), managed-redis (redis)
+    - When EXTERNAL_DB=true: postgres container skipped, DATABASE_URL points to external host
+    - When EXTERNAL_REDIS=true: redis container skipped, REDIS_HOST/REDIS_PORT point to external
+    - Migrate container has built-in wait-for-db retry loop (works with both Docker and external)
+
+  delivery-package/setup.sh — Customer setup script
+    - Reads EXTERNAL_DB / EXTERNAL_REDIS from .env
+    - Skips pulling/starting Docker containers for external services
+    - Tests database connectivity before running migrations
+    - Uses --profile managed-db / --profile managed-redis for Docker Compose
+
+================================================================================
+12. ENVIRONMENT VARIABLES
+================================================================================
+
+Each service has its own .env file in its app directory.
+
+Audit Service (.env):
+  DATABASE_URL=postgresql://user:pass@localhost:5432/audit_db?schema=public
+
+Tenant Service (.env):
+  DATABASE_URL=postgresql://user:pass@localhost:5432/tenant_db?schema=public
+
+Users Service (.env):
+  DATABASE_URL=postgresql://user:pass@localhost:5432/users_db?schema=public
+
+Auth Service (.env):
+  DATABASE_URL=postgresql://user:pass@localhost:5432/auth_db?schema=public
+  JWT_SECRET=your-secret-key
+  JWT_EXPIRATION=15m
+  JWT_REFRESH_EXPIRATION_DAYS=7
+
+License Service (.env):
+  DATABASE_URL=postgresql://user:pass@localhost:5432/license_db?schema=public
+  REDIS_HOST=localhost
+  REDIS_PORT=6379
+
+================================================================================
+13. FUTURE ROADMAP
+================================================================================
+
+Phase 6 — Kafka Integration:
+  Replace TCP fire-and-forget events with Kafka for async event-driven
+  communication. Keep TCP for synchronous request-response patterns.
+  Topics: tenant-events, user-events, usage-events, billing-events,
+  notification-events.
+
+Phase 7 — Cron Jobs & Background Tasks:
+  - Auth: Session cleanup, LDAP sync
+  - Tenant: Subscription renewal, overdue invoice alerts
+  - License: Redis→DB sync, quota reset, top-up expiry
+
+Phase 8 — Additional Improvements:
+  - API Gateway (JWT validation, permission checks, rate limiting)
+  - Notification Service (email, SMS, push for quota warnings, invoices)
+  - Audit integration interceptor (auto-publish audit events)
+  - Redis caching layer (tenant configs, user permissions)
+  - Docker Compose for local development
+
+================================================================================
+END OF DOCUMENT
+================================================================================

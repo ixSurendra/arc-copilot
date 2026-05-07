@@ -1,0 +1,211 @@
+# ================================================================
+# ix-copilot — Cloud Deployment Stack
+#
+# ON_PREM=false — multi-tenant SaaS mode.
+# Images pulled from GHCR after first deploy.
+#
+# Usage:
+#   docker compose pull           # pull latest images
+#   docker compose up -d          # start / update all services
+#   docker compose logs -f        # view logs
+#   docker compose down           # stop
+# ================================================================
+
+services:
+
+  # ── Database Migrations (runs once per deploy, then exits) ─────
+  migrate:
+    image: ${REGISTRY:-local}/ix-copilot/migrate:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    command: >
+      sh -c "
+        echo '── Waiting for database ──' &&
+        for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+          node -e \"const{Client}=require('pg');const c=new Client(process.env.DATABASE_URL);c.connect().then(()=>{c.end();process.exit(0)}).catch(()=>process.exit(1))\" && break;
+          echo \"  Attempt $$i: not ready, retrying in 2s...\";
+          sleep 2;
+        done &&
+        echo '── Running migrations ──' &&
+        cd apps/tenant-service  && npx prisma migrate deploy && cd ../.. &&
+        cd apps/users-service   && npx prisma migrate deploy && cd ../.. &&
+        cd apps/auth-service    && npx prisma migrate deploy && cd ../.. &&
+        cd apps/license-service && npx prisma migrate deploy && cd ../.. &&
+        cd apps/audit-service   && npx prisma migrate deploy && cd ../.. &&
+        echo '── All migrations complete ──'
+      "
+
+  # ── Cloud Seed (best-effort, skipped if already done) ──────────
+  # Creates System Tenant (ID=0) + Super Admin on first deploy only.
+  # Services do NOT depend on this — if seed fails, services still start.
+  seed:
+    image: ${REGISTRY:-local}/ix-copilot/migrate:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      ON_PREM: 'false'
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-admin@system.local}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-ChangeMe123!}
+    command: >
+      sh -c "
+        echo '── Seeding Plans + Features + Quotas (idempotent) ──' &&
+        npx tsx tools/seed-align-plans-features.ts || echo '── Plans/features seed skipped ──' &&
+        echo '── Seeding Super Admin ──' &&
+        npx tsx tools/seed-super-admin.ts || echo '── Seed skipped (already exists) ──' &&
+        echo '── Seeding DMS Modules + Permissions (idempotent) ──' &&
+        npx tsx tools/seed-dms-modules-permissions.ts || echo '── DMS modules seed skipped ──' &&
+        echo '── Granting TENANT_ADMIN full DMS permissions (idempotent) ──' &&
+        npx tsx tools/seed-tenant-admin-dms-permissions.ts || echo '── TENANT_ADMIN permission backfill skipped ──' &&
+        echo '── Seeding Default Email Templates ──' &&
+        npx tsx tools/seed-default-templates.ts || echo '── Templates seed skipped ──' &&
+        echo '── Seed step complete ──'
+      "
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # ── Microservices ───────────────────────────────────────────────
+  # All services depend only on migrate (not seed).
+  # Seed is best-effort — services start regardless of seed result.
+
+  tenant-service:
+    image: ${REGISTRY:-local}/ix-copilot/tenant-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'false'
+      USERS_SERVICE_HOST: users-service
+    ports:
+      - '4003:4003' # HTTP
+      - '3003:3003' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      users-service:
+        condition: service_started
+
+  users-service:
+    image: ${REGISTRY:-local}/ix-copilot/users-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'false'
+      TENANT_SERVICE_HOST: tenant-service
+      LICENSE_SERVICE_HOST: license-service
+    ports:
+      - '4004:4004' # HTTP
+      - '3004:3004' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  audit-service:
+    image: ${REGISTRY:-local}/ix-copilot/audit-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'false'
+    ports:
+      - '4002:4002' # HTTP
+      - '3002:3002' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  auth-service:
+    image: ${REGISTRY:-local}/ix-copilot/auth-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'false'
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-15m}
+      JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-7}
+      USERS_SERVICE_HOST: users-service
+      TENANT_SERVICE_HOST: tenant-service
+      AUDIT_SERVICE_HOST: audit-service
+    ports:
+      - '4001:4001' # HTTP
+      - '3001:3001' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      users-service:
+        condition: service_started
+      tenant-service:
+        condition: service_started
+      audit-service:
+        condition: service_started
+
+  license-service:
+    image: ${REGISTRY:-local}/ix-copilot/license-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'false'
+      REDIS_HOST: ${REDIS_HOST:-172.17.0.1}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      TENANT_SERVICE_HOST: tenant-service
+      AUDIT_SERVICE_HOST: audit-service
+    ports:
+      - '4005:4005' # HTTP
+      - '3005:3005' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      tenant-service:
+        condition: service_started
+
+  admin-portal:
+    image: ${REGISTRY:-local}/ix-copilot/admin-portal:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'false'
+      TENANT_SERVICE_HOST: tenant-service
+      USERS_SERVICE_HOST: users-service
+      LICENSE_SERVICE_HOST: license-service
+      AUTH_SERVICE_HOST: auth-service
+      AUDIT_SERVICE_HOST: audit-service
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@example.com}
+    ports:
+      - '4006:4006' # HTTP
+      - '3006:3006' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      tenant-service:
+        condition: service_started
+      users-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+      audit-service:
+        condition: service_started
+      license-service:
+        condition: service_started
+
+  # ── Frontend ───────────────────────────────────────────────────
+
+  admin-ui:
+    image: ${REGISTRY:-local}/ix-copilot/admin-ui:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      BFF_INTERNAL_URL: http://admin-portal:4006
+    ports:
+      - '3000:3000'
+    depends_on:
+      admin-portal:
+        condition: service_started

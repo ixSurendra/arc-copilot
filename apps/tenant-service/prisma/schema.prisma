@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  @@map("TENANT_STATUS")
+}
+
+enum QuotaType {
+  SHARED
+  INDIVIDUAL
+  @@map("QUOTA_TYPE")
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUALLY
+  @@map("BILLING_CYCLE")
+}
+
+enum BillingType {
+  PLAN_SUBSCRIPTION
+  TOP_UP
+  @@map("BILLING_TYPE")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  @@map("PAYMENT_STATUS")
+}
+
+enum PaymentMethod {
+  CARD
+  BANK
+  UPI
+  @@map("PAYMENT_METHOD")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  @@map("INVOICE_STATUS")
+}
+
+enum PlanChangeType {
+  INITIAL
+  UPGRADE
+  DOWNGRADE
+  @@map("PLAN_CHANGE_TYPE")
+}
+
+model Tenant {
+  id             Int          @id @default(autoincrement()) @map("ID")
+  planId         String       @map("PLAN_ID")
+  nextPlanId     String?      @map("NEXT_PLAN_ID")
+  quotaType      QuotaType    @map("QUOTA_TYPE")
+  maxUsers       Int?         @map("MAX_USERS")
+  billingCycle   BillingCycle? @map("BILLING_CYCLE")
+  cycleStartDate DateTime?    @map("CYCLE_START_DATE") @db.Date
+  tenantName        String       @map("TENANT_NAME")
+  domain            String       @map("DOMAIN")
+  isOnPrem          Boolean      @default(false) @map("IS_ON_PREM")
+  licenseExpiryDate DateTime?    @map("LICENSE_EXPIRY_DATE") @db.Date
+  status            TenantStatus @default(ACTIVE) @map("STATUS")
+  createdAt         DateTime     @default(now()) @map("CREATED_AT")
+  updatedAt         DateTime     @updatedAt @map("UPDATED_AT")
+
+  planHistory    TenantPlanHistory[]
+  billings       TenantBilling[]
+
+  @@index([status])
+  @@index([domain])
+  @@index([planId])
+  @@index([isOnPrem])
+  @@map("TENANTS")
+}
+
+model TenantPlanHistory {
+  id         Int            @id @default(autoincrement()) @map("ID")
+  tenantId   Int            @map("TENANT_ID")
+  planId     String         @map("PLAN_ID")
+  changeType PlanChangeType @map("CHANGE_TYPE")
+  startDate  DateTime       @map("START_DATE") @db.Date
+  endDate    DateTime?      @map("END_DATE") @db.Date
+  createdAt  DateTime       @default(now()) @map("CREATED_AT")
+
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, startDate])
+  @@map("TENANT_PLAN_HISTORY")
+}
+
+model TenantBilling {
+  id              Int           @id @default(autoincrement()) @map("ID")
+  tenantId        Int           @map("TENANT_ID")
+  billingType     BillingType   @map("BILLING_TYPE")
+  referenceId     String        @map("REFERENCE_ID")
+  amount          Decimal       @map("AMOUNT") @db.Decimal(12, 2)
+  currency        String        @default("USD") @map("CURRENCY")
+  billingDate     DateTime      @map("BILLING_DATE") @db.Date
+  nextBillingDate DateTime?     @map("NEXT_BILLING_DATE") @db.Date
+  paymentStatus   PaymentStatus @default(PENDING) @map("PAYMENT_STATUS")
+  paymentMethod   PaymentMethod @map("PAYMENT_METHOD")
+  transactionId   String?       @map("TRANSACTION_ID")
+  createdAt       DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt       DateTime      @updatedAt @map("UPDATED_AT")
+
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice         Invoice?
+
+  @@index([tenantId])
+  @@index([paymentStatus])
+  @@index([tenantId, paymentStatus])
+  @@index([nextBillingDate])
+  @@map("TENANT_BILLINGS")
+}
+
+model Invoice {
+  id            Int           @id @default(autoincrement()) @map("ID")
+  tenantId      Int           @map("TENANT_ID")
+  billingId     Int           @unique @map("BILLING_ID")
+  invoiceNumber String        @unique @map("INVOICE_NUMBER")
+  amount        Decimal       @map("AMOUNT") @db.Decimal(12, 2)
+  currency      String        @default("USD") @map("CURRENCY")
+  taxAmount     Decimal       @map("TAX_AMOUNT") @db.Decimal(12, 2)
+  totalAmount   Decimal       @map("TOTAL_AMOUNT") @db.Decimal(12, 2)
+  invoiceDate   DateTime      @map("INVOICE_DATE") @db.Date
+  dueDate       DateTime      @map("DUE_DATE") @db.Date
+  status        InvoiceStatus @default(DRAFT) @map("STATUS")
+  pdfUrl        String?       @map("PDF_URL")
+  createdAt     DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt     DateTime      @updatedAt @map("UPDATED_AT")
+
+  billing       TenantBilling @relation(fields: [billingId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([invoiceNumber])
+  @@index([tenantId, status])
+  @@index([dueDate])
+  @@map("INVOICES")
+}
+
+enum NotificationType {
+  WELCOME
+  PASSWORD_RESET
+  PASSWORD_CHANGED
+  @@map("NOTIFICATION_TYPE")
+}
+
+model TenantBranding {
+  id             Int      @id @default(autoincrement()) @map("ID")
+  tenantId       Int      @unique @map("TENANT_ID")
+  companyName    String   @map("COMPANY_NAME")
+  logoUrl        String?  @map("LOGO_URL")
+  primaryColor   String   @default("#18181b") @map("PRIMARY_COLOR")
+  secondaryColor String?  @map("SECONDARY_COLOR")
+  footerText           String?  @map("FOOTER_TEXT")
+  usePrimaryAsTheme    Boolean  @default(false) @map("USE_PRIMARY_AS_THEME")
+  createdAt            DateTime @default(now()) @map("CREATED_AT")
+  updatedAt      DateTime @updatedAt @map("UPDATED_AT")
+
+  @@index([tenantId])
+  @@map("TENANT_BRANDINGS")
+}
+
+model EmailTemplate {
+  id        Int              @id @default(autoincrement()) @map("ID")
+  tenantId  Int              @map("TENANT_ID")
+  type      NotificationType @map("TYPE")
+  subject   String           @map("SUBJECT")
+  htmlBody  String           @map("HTML_BODY") @db.Text
+  isActive  Boolean          @default(true) @map("IS_ACTIVE")
+  createdAt DateTime         @default(now()) @map("CREATED_AT")
+  updatedAt DateTime         @updatedAt @map("UPDATED_AT")
+
+  @@unique([tenantId, type])
+  @@index([tenantId])
+  @@index([tenantId, type])
+  @@map("EMAIL_TEMPLATES")
+}

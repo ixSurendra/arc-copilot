@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuditLogStatus {
+  SUCCESS
+  FAILURE
+  PARTIAL
+
+  @@map("AUDIT_LOG_STATUS")
+}
+
+model AuditLog {
+  id         Int            @id @default(autoincrement()) @map("ID")
+  tenantId   Int            @map("TENANT_ID")
+  userId     Int            @map("USER_ID")
+  action     String         @map("ACTION")
+  resource   String         @map("RESOURCE")
+  resourceId String?        @map("RESOURCE_ID")
+  status     AuditLogStatus @default(SUCCESS) @map("STATUS")
+  ipAddress  String?        @map("IP_ADDRESS")
+  userAgent  String?        @map("USER_AGENT")
+  duration   Int?           @map("DURATION")
+  source     String?        @map("SOURCE")
+  timestamp  DateTime       @default(now()) @map("TIMESTAMP")
+
+  detail     AuditLogDetail?
+
+  @@index([tenantId])
+  @@index([tenantId, userId])
+  @@index([tenantId, timestamp])
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@index([action])
+  @@index([timestamp])
+  @@index([userId, timestamp])
+  @@index([status])
+  @@index([action, timestamp])
+  @@index([ipAddress])
+  @@map("AUDIT_LOGS")
+}
+
+model AuditLogDetail {
+  auditLogId Int      @id @map("AUDIT_LOG_ID")
+  oldValue   Json?    @map("OLD_VALUE")
+  newValue   Json?    @map("NEW_VALUE")
+  metadata   Json?    @map("METADATA")
+
+  auditLog   AuditLog @relation(fields: [auditLogId], references: [id], onDelete: Cascade)
+
+  @@map("AUDIT_LOG_DETAILS")
+}
+
+enum NotificationStatus {
+  SENT
+  FAILED
+  PENDING
+  @@map("NOTIFICATION_STATUS")
+}
+
+enum NotificationType {
+  // Platform (email)
+  WELCOME
+  PASSWORD_RESET
+  PASSWORD_CHANGED
+  // DMS (in-app)
+  CONNECTION_UNHEALTHY
+  MIGRATION_COMPLETE
+  QUOTA_WARNING
+  CREDENTIAL_EXPIRING
+  PULL_COMPLETE
+  PULL_FAILED
+  OBJECT_LINK_COMPLETE
+  COMMENT_ADDED
+  ANNOTATION_ADDED
+  AI_PROCESSING_COMPLETE
+  AI_PROCESSING_FAILED
+  @@map("NOTIFICATION_TYPE")
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+  @@map("NOTIFICATION_CHANNEL")
+}
+
+model NotificationLog {
+  id             Int                 @id @default(autoincrement()) @map("ID")
+  tenantId       Int                 @map("TENANT_ID")
+  recipientEmail String?             @map("RECIPIENT_EMAIL")
+  type           NotificationType    @map("TYPE")
+  channel        NotificationChannel @default(EMAIL) @map("CHANNEL")
+  subject        String              @map("SUBJECT")
+  status         NotificationStatus  @map("STATUS")
+  errorMessage   String?             @map("ERROR_MESSAGE")
+  metadata       Json?               @map("METADATA")
+  source         String?             @map("SOURCE")
+  sentAt         DateTime            @default(now()) @map("SENT_AT")
+
+  @@index([tenantId])
+  @@index([tenantId, sentAt])
+  @@index([recipientEmail])
+  @@index([type])
+  @@index([status])
+  @@index([sentAt])
+  @@index([source])
+  @@map("NOTIFICATION_LOGS")
+}

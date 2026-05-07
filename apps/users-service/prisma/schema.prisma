@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────────
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  @@map("USER_STATUS")
+}
+
+enum GenericStatus {
+  ACTIVE
+  INACTIVE
+  @@map("GENERIC_STATUS")
+}
+
+// ──────────────────────────────────────────────
+// Global master tables (no tenant_id)
+// ──────────────────────────────────────────────
+
+model ModuleMaster {
+  id          Int           @id @default(autoincrement()) @map("ID")
+  moduleName  String        @map("MODULE_NAME")
+  moduleKey   String        @unique @map("MODULE_KEY")
+  description String?       @map("DESCRIPTION")
+  status      GenericStatus @default(ACTIVE) @map("STATUS")
+  createdAt   DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt   DateTime      @updatedAt @map("UPDATED_AT")
+
+  modulePermissions ModulePermission[]
+
+  @@map("MODULE_MASTER")
+}
+
+model PermissionMaster {
+  id             Int           @id @default(autoincrement()) @map("ID")
+  permissionName String        @map("PERMISSION_NAME")
+  permissionKey  String        @unique @map("PERMISSION_KEY")
+  description    String?       @map("DESCRIPTION")
+  status         GenericStatus @default(ACTIVE) @map("STATUS")
+  createdAt      DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt      DateTime      @updatedAt @map("UPDATED_AT")
+
+  modulePermissions ModulePermission[]
+
+  @@map("PERMISSION_MASTER")
+}
+
+// ──────────────────────────────────────────────
+// Module–Permission junction
+// ──────────────────────────────────────────────
+
+model ModulePermission {
+  moduleId     Int           @map("MODULE_ID")
+  permissionId Int           @map("PERMISSION_ID")
+  status       GenericStatus @default(ACTIVE) @map("STATUS")
+
+  module     ModuleMaster     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  permission PermissionMaster @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  roleModulePermissions RoleModulePermission[]
+
+  @@id([moduleId, permissionId])
+  @@index([permissionId])
+  @@map("MODULE_PERMISSIONS")
+}
+
+// ──────────────────────────────────────────────
+// Tenant-scoped: Roles
+// ──────────────────────────────────────────────
+
+model Role {
+  id          Int           @id @default(autoincrement()) @map("ID")
+  tenantId    Int           @map("TENANT_ID")
+  roleName    String        @map("ROLE_NAME")
+  description String?       @map("DESCRIPTION")
+  status      GenericStatus @default(ACTIVE) @map("STATUS")
+  createdAt   DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt   DateTime      @updatedAt @map("UPDATED_AT")
+
+  roleModulePermissions RoleModulePermission[]
+  userRoles             UserRole[]
+  groupRoles            GroupRole[]
+
+  @@unique([tenantId, roleName])
+  @@index([tenantId])
+  @@map("ROLES")
+}
+
+// ──────────────────────────────────────────────
+// Role–Module–Permission junction
+// ──────────────────────────────────────────────
+
+model RoleModulePermission {
+  roleId       Int     @map("ROLE_ID")
+  moduleId     Int     @map("MODULE_ID")
+  permissionId Int     @map("PERMISSION_ID")
+  isEnabled    Boolean @default(true) @map("IS_ENABLED")
+
+  role             Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  modulePermission ModulePermission @relation(fields: [moduleId, permissionId], references: [moduleId, permissionId], onDelete: Cascade)
+
+  @@id([roleId, moduleId, permissionId])
+  @@index([moduleId, permissionId])
+  @@map("ROLE_MODULE_PERMISSIONS")
+}
+
+// ──────────────────────────────────────────────
+// Tenant-scoped: Groups
+// ──────────────────────────────────────────────
+
+model GroupTable {
+  id          Int           @id @default(autoincrement()) @map("ID")
+  tenantId    Int           @map("TENANT_ID")
+  groupName   String        @map("GROUP_NAME")
+  description String?       @map("DESCRIPTION")
+  status      GenericStatus @default(ACTIVE) @map("STATUS")
+  createdAt   DateTime      @default(now()) @map("CREATED_AT")
+  updatedAt   DateTime      @updatedAt @map("UPDATED_AT")
+
+  groupRoles GroupRole[]
+  userGroups UserGroup[]
+
+  @@unique([tenantId, groupName])
+  @@index([tenantId])
+  @@map("GROUPS")
+}
+
+// ──────────────────────────────────────────────
+// Group–Role junction
+// ──────────────────────────────────────────────
+
+model GroupRole {
+  groupId Int @map("GROUP_ID")
+  roleId  Int @map("ROLE_ID")
+
+  group GroupTable @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  role  Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, roleId])
+  @@index([roleId])
+  @@map("GROUP_ROLES")
+}
+
+// ──────────────────────────────────────────────
+// Tenant-scoped: Users
+// ──────────────────────────────────────────────
+
+model UserTable {
+  id        Int        @id @default(autoincrement()) @map("ID")
+  tenantId  Int        @map("TENANT_ID")
+  email     String     @map("EMAIL")
+  firstName String     @map("FIRST_NAME")
+  lastName  String     @map("LAST_NAME")
+  phone     String?    @map("PHONE")
+  status    UserStatus @default(ACTIVE) @map("STATUS")
+  createdAt DateTime   @default(now()) @map("CREATED_AT")
+  updatedAt DateTime   @updatedAt @map("UPDATED_AT")
+
+  userRoles  UserRole[]
+  userGroups UserGroup[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([email])
+  @@index([tenantId, status])
+  @@map("USERS")
+}
+
+// ──────────────────────────────────────────────
+// User–Role junction
+// ──────────────────────────────────────────────
+
+model UserRole {
+  userId Int @map("USER_ID")
+  roleId Int @map("ROLE_ID")
+
+  user UserTable @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("USER_ROLES")
+}
+
+// ──────────────────────────────────────────────
+// User–Group junction
+// ──────────────────────────────────────────────
+
+model UserGroup {
+  userId  Int @map("USER_ID")
+  groupId Int @map("GROUP_ID")
+
+  user  UserTable  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group GroupTable @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+  @@index([groupId])
+  @@map("USER_GROUPS")
+}

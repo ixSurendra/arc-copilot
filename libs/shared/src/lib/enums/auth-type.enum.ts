@@ -1,0 +1,8 @@
+export enum AuthType {
+  PASSWORD = 'PASSWORD',
+  SSO_GOOGLE = 'SSO_GOOGLE',
+  SSO_MICROSOFT = 'SSO_MICROSOFT',
+  SAML = 'SAML',
+  MAGIC_LINK = 'MAGIC_LINK',
+  LDAP = 'LDAP',
+}

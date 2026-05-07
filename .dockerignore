@@ -1,0 +1,39 @@
+# Dependencies (installed inside Docker)
+node_modules
+**/node_modules
+
+# Build output (built inside Docker)
+**/dist
+**/.next
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Environment files (Docker uses its own env vars)
+.env
+.env.*
+!.env.example
+!.env.docker
+
+# Nx cache
+.nx
+tmp
+
+# Tools & keys (sensitive)
+tools/keys/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (no need to copy into context recursively)
+Dockerfile
+docker-compose.yml
+*.tar.gz

@@ -1,0 +1,22 @@
+export const AUTH_SERVICE = 'AUTH_SERVICE';
+export const AUDIT_SERVICE = 'AUDIT_SERVICE';
+export const TENANT_SERVICE = 'TENANT_SERVICE';
+export const USERS_SERVICE = 'USERS_SERVICE';
+export const LICENSE_SERVICE = 'LICENSE_SERVICE';
+export const ADMIN_PORTAL = 'ADMIN_PORTAL';
+
+export const AUTH_SERVICE_PORT = 3001;
+export const AUDIT_SERVICE_PORT = 3002;
+export const TENANT_SERVICE_PORT = 3003;
+export const USERS_SERVICE_PORT = 3004;
+export const LICENSE_SERVICE_PORT = 3005;
+export const ADMIN_PORTAL_PORT = 3006;
+
+export const AUTH_SERVICE_HTTP_PORT = 4001;
+export const AUDIT_SERVICE_HTTP_PORT = 4002;
+export const TENANT_SERVICE_HTTP_PORT = 4003;
+export const USERS_SERVICE_HTTP_PORT = 4004;
+export const LICENSE_SERVICE_HTTP_PORT = 4005;
+export const ADMIN_PORTAL_HTTP_PORT = 4006;
+
+export const SYSTEM_TENANT_ID = 0;

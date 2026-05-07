@@ -1,0 +1,12 @@
+---
+description: Documentation placement conventions for the ix-copilot workspace
+globs: ["**/*.md"]
+alwaysApply: true
+---
+
+# Documentation
+
+- ALL documentation files (service guides, API references, integration docs, architecture notes) MUST be created in the `docs/` folder at the workspace root
+- One file per service or topic, e.g. `docs/audit-service.md`, `docs/auth-service.md`
+- Never create `.md` documentation files inside `apps/`, `libs/`, or anywhere else in the workspace
+- When updating a service (new fields, endpoints, patterns), update the corresponding `docs/` file in the same change

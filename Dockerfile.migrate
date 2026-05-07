@@ -1,0 +1,54 @@
+# ================================================================
+# Minimal Dockerfile for the migrate service
+#
+# Only copies prisma schemas + migration SQL files.
+# Much smaller than the full source image (~150MB vs several GB).
+#
+# Build:
+#   docker build -f Dockerfile.migrate -t local/ix-copilot/migrate:latest .
+# ================================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install only prisma CLI and pg (for connectivity test)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copy only the service package.json files needed for pnpm workspace resolution
+COPY apps/auth-service/package.json    ./apps/auth-service/package.json
+COPY apps/audit-service/package.json  ./apps/audit-service/package.json
+COPY apps/tenant-service/package.json ./apps/tenant-service/package.json
+COPY apps/users-service/package.json  ./apps/users-service/package.json
+COPY apps/license-service/package.json ./apps/license-service/package.json
+COPY apps/admin-portal/package.json   ./apps/admin-portal/package.json
+COPY apps/admin-ui/package.json       ./apps/admin-ui/package.json
+COPY libs/shared/package.json         ./libs/shared/package.json
+
+# Install prisma, pg (connectivity + migrations), bcryptjs + dotenv (seed scripts)
+RUN corepack enable pnpm && \
+    pnpm add -w prisma pg bcryptjs dotenv --ignore-workspace-root-check && \
+    pnpm store prune
+
+# Copy prisma schemas and migrations from all services
+COPY apps/auth-service/prisma     ./apps/auth-service/prisma
+COPY apps/audit-service/prisma    ./apps/audit-service/prisma
+COPY apps/tenant-service/prisma   ./apps/tenant-service/prisma
+COPY apps/users-service/prisma    ./apps/users-service/prisma
+COPY apps/license-service/prisma  ./apps/license-service/prisma
+
+# Copy prisma config files
+COPY apps/auth-service/prisma.config.ts    ./apps/auth-service/prisma.config.ts
+COPY apps/audit-service/prisma.config.ts   ./apps/audit-service/prisma.config.ts
+COPY apps/tenant-service/prisma.config.ts  ./apps/tenant-service/prisma.config.ts
+COPY apps/users-service/prisma.config.ts   ./apps/users-service/prisma.config.ts
+COPY apps/license-service/prisma.config.ts ./apps/license-service/prisma.config.ts
+
+# Copy root .env loader (used by prisma.config.ts)
+COPY .env.example .env.example
+
+# Migration entrypoint + seed scripts
+COPY tools/ ./tools/
+RUN chmod +x ./tools/run-migrations.sh
+
+CMD ["sh", "./tools/run-migrations.sh"]

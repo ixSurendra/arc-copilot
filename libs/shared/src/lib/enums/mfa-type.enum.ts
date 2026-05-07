@@ -1,0 +1,5 @@
+export enum MfaType {
+  EMAIL_OTP = 'EMAIL_OTP',
+  SMS_OTP = 'SMS_OTP',
+  AUTHENTICATOR_APP = 'AUTHENTICATOR_APP',
+}

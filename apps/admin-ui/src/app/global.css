@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 20% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
+    --primary: 175 84% 22%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 170 14% 96%;
+    --secondary-foreground: 175 10% 40%;
+    --muted: 170 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 170 14% 96%;
+    --accent-foreground: 220 20% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 175 30% 82%;
+    --input: 175 30% 82%;
+    --ring: 175 84% 32%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 220 20% 10%;
+    --sidebar-border: 175 30% 82%;
+    --sidebar-ring: 175 84% 32%;
+    --sidebar-accent: 175 50% 95%;
+    --sidebar-accent-foreground: 175 84% 32%;
+    --gradient-from: 170 65% 18%;
+    --gradient-to: 185 55% 30%;
+    --chart-1: 175 84% 32%;
+    --chart-2: 262 60% 55%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 340 75% 55%;
+    --chart-5: 45 90% 50%;
+  }
+
+  .dark {
+    --background: 220 25% 6%;
+    --foreground: 210 20% 98%;
+    --card: 220 25% 8%;
+    --card-foreground: 210 20% 98%;
+    --popover: 220 25% 8%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 175 70% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 218 11% 65%;
+    --accent: 215 28% 17%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 175 25% 20%;
+    --input: 175 25% 20%;
+    --ring: 175 70% 42%;
+    --sidebar-background: 220 25% 6%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-border: 175 25% 20%;
+    --sidebar-ring: 175 70% 42%;
+    --sidebar-accent: 175 30% 15%;
+    --sidebar-accent-foreground: 175 70% 50%;
+    --gradient-from: 170 83% 7%;
+    --gradient-to: 185 72% 19%;
+    --chart-1: 175 70% 42%;
+    --chart-2: 262 60% 55%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 340 75% 55%;
+    --chart-5: 45 90% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* TipTap Email Editor Styles */
+@layer components {
+  .tiptap-email-editor .ProseMirror {
+    outline: none;
+    min-height: 300px;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .tiptap-email-editor .ProseMirror p {
+    margin-bottom: 0.75em;
+  }
+
+  .tiptap-email-editor .ProseMirror h1 {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-bottom: 0.5em;
+    line-height: 1.3;
+  }
+
+  .tiptap-email-editor .ProseMirror h2 {
+    font-size: 1.25em;
+    font-weight: 600;
+    margin-bottom: 0.5em;
+    line-height: 1.3;
+  }
+
+  .tiptap-email-editor .ProseMirror h3 {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 0.5em;
+    line-height: 1.3;
+  }
+
+  .tiptap-email-editor .ProseMirror ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+    margin-bottom: 0.75em;
+  }
+
+  .tiptap-email-editor .ProseMirror ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    margin-bottom: 0.75em;
+  }
+
+  .tiptap-email-editor .ProseMirror li {
+    margin-bottom: 0.25em;
+  }
+
+  .tiptap-email-editor .ProseMirror a {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .tiptap-email-editor .ProseMirror hr {
+    border: none;
+    border-top: 1px solid hsl(var(--border));
+    margin: 1em 0;
+  }
+
+  .tiptap-email-editor .ProseMirror img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+
+  .tiptap-email-editor .ProseMirror blockquote {
+    border-left: 3px solid hsl(var(--border));
+    padding-left: 1em;
+    margin-left: 0;
+    margin-bottom: 0.75em;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Placeholder */
+  .tiptap-email-editor .ProseMirror p.is-editor-empty:first-child::before {
+    color: hsl(var(--muted-foreground));
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
+  /* Selection styling */
+  .tiptap-email-editor .ProseMirror ::selection {
+    background: hsl(var(--primary) / 0.2);
+  }
+
+  /* Focused editor state */
+  .tiptap-email-editor .ProseMirror:focus {
+    outline: none;
+  }
+}

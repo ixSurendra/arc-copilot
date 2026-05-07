@@ -1,0 +1,255 @@
+# ================================================================
+# ix-copilot — On-Prem Production Stack
+#
+# This file is for customer on-prem deployments.
+# It uses pre-built images from a Docker registry (no source code needed).
+#
+# Configuration:
+#   EXTERNAL_DB=true    → skip Docker postgres, use customer's own PostgreSQL
+#   EXTERNAL_REDIS=true → skip Docker redis, use customer's own Redis
+#   Default: both false (postgres + redis run in Docker)
+#
+# Prerequisites:
+#   1. Copy .env.onprem.example → .env.onprem and fill in values
+#   2. Place your license.lic file in ./license/license.lic
+#   3. Login to Docker registry: docker login ${REGISTRY}
+#
+# Usage:
+#   docker compose --env-file .env.onprem -f docker-compose.onprem.yml up -d      # start
+#   docker compose --env-file .env.onprem -f docker-compose.onprem.yml logs -f     # logs
+#   docker compose --env-file .env.onprem -f docker-compose.onprem.yml down        # stop
+#   docker compose --env-file .env.onprem -f docker-compose.onprem.yml pull        # pull latest
+#   docker compose --env-file .env.onprem -f docker-compose.onprem.yml down -v     # stop + wipe
+# ================================================================
+
+services:
+  # ── Infrastructure ─────────────────────────────────────────────
+  # These services only start when EXTERNAL_DB / EXTERNAL_REDIS are NOT true.
+  # Controlled via Docker Compose profiles.
+
+  postgres:
+    image: postgres:15-alpine
+    profiles: ['managed-db']
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ix_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d ix_db']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    profiles: ['managed-redis']
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Database Migrations (runs once, then exits) ────────────────
+
+  migrate:
+    image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/migrate:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    command: >
+      sh -c "
+        echo '── Waiting for database to be reachable ──' &&
+        for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+          node -e \"const{Client}=require('pg');const c=new Client(process.env.DATABASE_URL);c.connect().then(()=>{c.end();process.exit(0)}).catch(()=>process.exit(1))\" && break;
+          echo \"  Attempt $$i: database not ready, retrying in 2s...\";
+          sleep 2;
+        done &&
+        echo '── Running migrations for all services ──' &&
+        cd apps/tenant-service  && npx prisma migrate deploy && cd ../.. &&
+        cd apps/users-service   && npx prisma migrate deploy && cd ../.. &&
+        cd apps/auth-service    && npx prisma migrate deploy && cd ../.. &&
+        cd apps/license-service && npx prisma migrate deploy && cd ../.. &&
+        cd apps/audit-service   && npx prisma migrate deploy && cd ../.. &&
+        echo '── All migrations complete ──'
+      "
+
+  # ── Seed default admin (runs once after migrations) ───────────
+
+  seed:
+    image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/migrate:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      TENANT_NAME: ${TENANT_NAME:-My Organization}
+      TENANT_DOMAIN: ${TENANT_DOMAIN:-onprem.local}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@onprem.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ChangeMe123!}
+      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-Admin}
+      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
+    command: >
+      sh -c "
+        echo '── Seeding DMS Modules + Permissions (idempotent) ──' &&
+        npx tsx tools/seed-dms-modules-permissions.ts || echo '── DMS modules seed skipped ──' &&
+        echo '── Seeding On-Prem Admin (tenant, role, user, license) ──' &&
+        npx tsx tools/seed-onprem-admin.ts &&
+        echo '── Granting TENANT_ADMIN full DMS permissions (idempotent) ──' &&
+        npx tsx tools/seed-tenant-admin-dms-permissions.ts || echo '── TENANT_ADMIN permission backfill skipped ──' &&
+        echo '── Seed step complete ──'
+      "
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # ── Microservices ──────────────────────────────────────────────
+
+  tenant-service:
+    image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/tenant-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env.onprem
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'true'
+    ports:
+      - '4003:4003' # HTTP
+      - '3003:3003' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  users-service:
+    image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/users-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env.onprem
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'true'
+    ports:
+      - '4004:4004' # HTTP
+      - '3004:3004' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  audit-service:
+    image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/audit-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env.onprem
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'true'
+    ports:
+      - '4002:4002' # HTTP
+      - '3002:3002' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  auth-service:
+    image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/auth-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env.onprem
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'true'
+      # JWT secrets from .env.onprem
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-15m}
+      JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-7}
+      # TCP client hosts (connect to other containers by service name)
+      USERS_SERVICE_HOST: users-service
+      TENANT_SERVICE_HOST: tenant-service
+    ports:
+      - '4001:4001' # HTTP
+      - '3001:3001' # TCP
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      users-service:
+        condition: service_started
+      tenant-service:
+        condition: service_started
+
+  license-service:
+    image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/license-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env.onprem
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'true'
+      # Redis — defaults to Docker container name; override in .env.onprem for external Redis
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      # On-prem license — public key only (for validation, NOT generation)
+      ONPREM_LICENSE_PUBLIC_KEY: ${ONPREM_LICENSE_PUBLIC_KEY}
+      LICENSE_FILE_PATH: /opt/ix-copilot/license/license.lic
+      # TCP client hosts
+      TENANT_SERVICE_HOST: tenant-service
+      AUDIT_SERVICE_HOST: audit-service
+    ports:
+      - '4005:4005' # HTTP
+      - '3005:3005' # TCP
+    volumes:
+      - ./license/license.lic:/opt/ix-copilot/license/license.lic:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      tenant-service:
+        condition: service_started
+
+  admin-portal:
+    image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/admin-portal:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env.onprem
+    environment:
+      NODE_ENV: production
+      ON_PREM: 'true'
+      # TCP client hosts (connect to other containers by service name)
+      TENANT_SERVICE_HOST: tenant-service
+      USERS_SERVICE_HOST: users-service
+      LICENSE_SERVICE_HOST: license-service
+      AUTH_SERVICE_HOST: auth-service
+      AUDIT_SERVICE_HOST: audit-service
+    ports:
+      - '4006:4006' # HTTP
+      - '3006:3006' # TCP
+    depends_on:
+      tenant-service:
+        condition: service_started
+      users-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+      audit-service:
+        condition: service_started
+      license-service:
+        condition: service_started
+
+  # ── Frontend ──────────────────────────────────────────────────────
+
+  admin-ui:
+    image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/admin-ui:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      BFF_INTERNAL_URL: http://admin-portal:4006
+    ports:
+      - '3000:3000' # Next.js
+    depends_on:
+      admin-portal:
+        condition: service_started
+
+# ── Volumes ──────────────────────────────────────────────────────
+# pgdata / redisdata are only used when running managed (Docker) instances.
+# When EXTERNAL_DB=true or EXTERNAL_REDIS=true, these volumes are unused.
+
+volumes:
+  pgdata:
+  redisdata:

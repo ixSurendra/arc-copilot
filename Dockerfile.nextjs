@@ -1,0 +1,73 @@
+# ================================================================
+# Multi-stage Dockerfile for ix-copilot Next.js applications
+# Usage:
+#   docker build -f Dockerfile.nextjs --build-arg APP_NAME=admin-ui -t admin-ui .
+# ================================================================
+
+# ----------------------------------------------------------------
+# Stage 1: Install dependencies (cached layer)
+# ----------------------------------------------------------------
+FROM node:20-alpine AS deps
+
+RUN corepack enable pnpm
+
+WORKDIR /app
+
+# Copy root workspace files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copy all workspace package.json files (pnpm needs workspace structure)
+COPY apps/audit-service/package.json   ./apps/audit-service/package.json
+COPY apps/auth-service/package.json    ./apps/auth-service/package.json
+COPY apps/tenant-service/package.json  ./apps/tenant-service/package.json
+COPY apps/users-service/package.json   ./apps/users-service/package.json
+COPY apps/license-service/package.json ./apps/license-service/package.json
+COPY apps/admin-portal/package.json    ./apps/admin-portal/package.json
+COPY apps/admin-ui/package.json        ./apps/admin-ui/package.json
+COPY libs/shared/package.json          ./libs/shared/package.json
+
+# Install all dependencies (frozen lockfile ensures reproducible builds)
+RUN pnpm install --frozen-lockfile
+
+# ----------------------------------------------------------------
+# Stage 2: Build the Next.js application
+# ----------------------------------------------------------------
+FROM deps AS builder
+
+ARG APP_NAME
+
+COPY . .
+
+# Disable Nx Daemon and plugin workers — they cannot run inside Docker containers
+ENV NX_DAEMON=false
+ENV NX_ISOLATE_PLUGINS=false
+
+# Build the Next.js app with Nx (uses `next build --webpack` → standalone output)
+RUN npx nx run ${APP_NAME}:build
+
+# ----------------------------------------------------------------
+# Stage 3: Production — minimal runtime image
+# ----------------------------------------------------------------
+FROM node:20-alpine AS production
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+ARG APP_NAME
+
+# Copy the standalone server (includes node_modules + server.js)
+COPY --from=builder /app/apps/${APP_NAME}/.next/standalone ./
+
+# Copy static assets (not included in standalone output)
+COPY --from=builder /app/apps/${APP_NAME}/.next/static ./apps/${APP_NAME}/.next/static
+
+# Copy public assets if they exist
+COPY --from=builder /app/apps/${APP_NAME}/public ./apps/${APP_NAME}/public
+
+# Next.js standalone listens on port 3000 by default
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+EXPOSE 3000
+
+CMD ["node", "apps/admin-ui/server.js"]

@@ -1,0 +1,5 @@
+export enum TopUpStatus {
+  ACTIVE = 'ACTIVE',
+  EXPIRED = 'EXPIRED',
+  FULLY_CONSUMED = 'FULLY_CONSUMED',
+}
