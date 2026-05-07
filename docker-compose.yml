@@ -23,6 +23,9 @@ services:
       - '6433:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Creates arc_audit_db + arc_insights_db on first boot (POSTGRES_DB
+      # already auto-creates arc_db). Idempotent because volume persists.
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d arc_db']
       interval: 5s
@@ -58,16 +61,21 @@ services:
     build:
       context: .
       target: source
+    # Foundation services (tenant, users, auth, license) migrate against
+    # arc_db. Audit-service migrates against arc_audit_db — we override
+    # DATABASE_URL just for that command.
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/arc_db?schema=public
+      AUDIT_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/arc_audit_db?schema=public
     command: >
       sh -c "
-        echo '── Running migrations for all services ──' &&
+        echo '── Running migrations on arc_db ──' &&
         cd apps/tenant-service  && npx prisma migrate deploy && cd ../.. &&
         cd apps/users-service   && npx prisma migrate deploy && cd ../.. &&
         cd apps/auth-service    && npx prisma migrate deploy && cd ../.. &&
         cd apps/license-service && npx prisma migrate deploy && cd ../.. &&
-        cd apps/audit-service   && npx prisma migrate deploy && cd ../.. &&
+        echo '── Running migrations on arc_audit_db ──' &&
+        cd apps/audit-service   && DATABASE_URL=$$AUDIT_DATABASE_URL npx prisma migrate deploy && cd ../.. &&
         echo '── All migrations complete ──'
       "
     depends_on:
@@ -111,6 +119,11 @@ services:
         SERVICE_NAME: audit-service
     restart: unless-stopped
     env_file: .env.docker
+    # audit-service runs on arc_audit_db. AUDIT_DATABASE_URL comes from
+    # .env.docker; we re-export it as DATABASE_URL because Prisma reads
+    # that name. Foundation services pick up the unaltered DATABASE_URL.
+    environment:
+      DATABASE_URL: ${AUDIT_DATABASE_URL}
     ports:
       - '6002:6002' # HTTP
       - '5002:5002' # TCP

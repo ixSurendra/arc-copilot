@@ -159,6 +159,12 @@ enum NotificationType {
   WELCOME
   PASSWORD_RESET
   PASSWORD_CHANGED
+  // Arc Insights — these are the only Arc notification types that
+  // ship via email (and therefore have EmailTemplate rows). The
+  // in-app-only ones (DASHBOARD_REFRESH_FAILED, ANOMALY_DETECTED) live
+  // in audit-service's NotificationType and don't appear here.
+  REPORT_DELIVERED
+  SCHEDULED_REPORT_FAILED
   @@map("NOTIFICATION_TYPE")
 }
 

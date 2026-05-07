@@ -33,6 +33,9 @@ model ModuleMaster {
   moduleName  String        @map("MODULE_NAME")
   moduleKey   String        @unique @map("MODULE_KEY")
   description String?       @map("DESCRIPTION")
+  /// Module keys this module depends on (admin-ui matrix dimming +
+  /// transitive permission validation). Empty array = root module.
+  dependsOn   String[]      @default([]) @map("DEPENDS_ON")
   status      GenericStatus @default(ACTIVE) @map("STATUS")
   createdAt   DateTime      @default(now()) @map("CREATED_AT")
   updatedAt   DateTime      @updatedAt @map("UPDATED_AT")

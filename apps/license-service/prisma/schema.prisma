@@ -56,6 +56,10 @@ model FeatureRegistry {
   description String?       @map("DESCRIPTION")
   category    String?       @map("CATEGORY")
   valueType   String        @default("boolean") @map("VALUE_TYPE")
+  /// Feature keys this feature depends on. License-generation refuses to
+  /// sign a payload missing dependencies; runtime feature checks walk the
+  /// chain. Empty array = root feature (e.g. arc.core.workspace).
+  dependsOn   String[]      @default([]) @map("DEPENDS_ON")
   status      FeatureStatus @default(ACTIVE) @map("STATUS")
   createdAt   DateTime      @default(now()) @map("CREATED_AT")
   updatedAt   DateTime      @updatedAt @map("UPDATED_AT")

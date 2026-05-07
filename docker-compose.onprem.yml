@@ -39,6 +39,9 @@ services:
       - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Bootstraps arc_audit_db + arc_insights_db on first boot. arc_db is
+      # auto-created by POSTGRES_DB. Idempotent because volume persists.
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d arc_db']
       interval: 5s
@@ -63,8 +66,12 @@ services:
 
   migrate:
     image: ${REGISTRY:-ghcr.io/your-org}/ix-copilot/migrate:${IMAGE_TAG:-latest}
+    # Foundation services run against arc_db (DATABASE_URL); audit-service
+    # runs against arc_audit_db (AUDIT_DATABASE_URL). Same Postgres host,
+    # different databases — see docker/postgres/init-databases.sh.
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      AUDIT_DATABASE_URL: ${AUDIT_DATABASE_URL}
     command: >
       sh -c "
         echo '── Waiting for database to be reachable ──' &&
@@ -73,12 +80,13 @@ services:
           echo \"  Attempt $$i: database not ready, retrying in 2s...\";
           sleep 2;
         done &&
-        echo '── Running migrations for all services ──' &&
+        echo '── Running migrations on arc_db ──' &&
         cd apps/tenant-service  && npx prisma migrate deploy && cd ../.. &&
         cd apps/users-service   && npx prisma migrate deploy && cd ../.. &&
         cd apps/auth-service    && npx prisma migrate deploy && cd ../.. &&
         cd apps/license-service && npx prisma migrate deploy && cd ../.. &&
-        cd apps/audit-service   && npx prisma migrate deploy && cd ../.. &&
+        echo '── Running migrations on arc_audit_db ──' &&
+        cd apps/audit-service   && DATABASE_URL=$$AUDIT_DATABASE_URL npx prisma migrate deploy && cd ../.. &&
         echo '── All migrations complete ──'
       "
 
@@ -145,6 +153,11 @@ services:
     environment:
       NODE_ENV: production
       ON_PREM: 'true'
+      # audit-service runs on arc_audit_db. AUDIT_DATABASE_URL comes
+      # from .env.onprem; we re-export as DATABASE_URL because Prisma
+      # reads that name. Foundation services keep the unaltered
+      # DATABASE_URL.
+      DATABASE_URL: ${AUDIT_DATABASE_URL}
     ports:
       - '6002:6002' # HTTP
       - '5002:5002' # TCP
