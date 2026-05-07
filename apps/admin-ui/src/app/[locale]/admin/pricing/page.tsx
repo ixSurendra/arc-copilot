@@ -1,7 +1,9 @@
 'use client';
 
+import { notFound } from 'next/navigation';
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { isCloudFeaturesEnabled } from '@/lib/feature-flags';
 import { Plus, ChevronLeft, ChevronRight, Loader2, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApi } from '@/hooks/use-api';
@@ -71,6 +73,9 @@ const STATUS_VARIANT_MAP: Record<string, 'default' | 'secondary' | 'destructive'
 /* -------------------------------------------------------------------------- */
 
 export default function PricingPage() {
+  // Cloud-only surface — gated off in arc-copilot's on-prem build.
+  if (!isCloudFeaturesEnabled()) notFound();
+
   const t = useTranslations('pricing');
   const tc = useTranslations('common');
 

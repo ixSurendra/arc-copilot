@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 import { navGroups } from '@/lib/constants';
+import { isCloudFeaturesEnabled } from '@/lib/feature-flags';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -51,9 +52,11 @@ export function Sidebar({ collapsed, onToggle, isSuperAdmin }: SidebarProps) {
         {navGroups
           .filter((group) => !group.superAdminOnly || isSuperAdmin)
           .map((group) => {
+            const cloudOn = isCloudFeaturesEnabled();
             const visibleItems = group.items.filter((item) => {
               if (item.superAdminOnly && !isSuperAdmin) return false;
               if (item.tenantAdminOnly && isSuperAdmin) return false;
+              if (item.cloudOnly && !cloudOn) return false;
               return true;
             });
             if (visibleItems.length === 0) return null;

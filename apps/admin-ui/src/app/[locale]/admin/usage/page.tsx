@@ -1,6 +1,8 @@
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { apiFetch } from '@/lib/api-client';
 import { getSessionToken } from '@/lib/auth';
+import { isCloudFeaturesEnabled } from '@/lib/feature-flags';
 import type { PaginatedResponse, UsageLedger } from '@/types';
 import { UsageListClient } from './_components/usage-list-client';
 
@@ -50,6 +52,9 @@ async function getUsage(searchParams: {
 }
 
 export default async function UsagePage({ searchParams }: PageProps) {
+  // Cloud-only surface — gated off in arc-copilot's on-prem build.
+  if (!isCloudFeaturesEnabled()) notFound();
+
   const resolvedParams = await searchParams;
   const usageResponse = await getUsage(resolvedParams);
 

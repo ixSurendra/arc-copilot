@@ -29,6 +29,14 @@ export interface NavItem {
   superAdminOnly?: boolean;
   /** When true, only TENANT_ADMIN users see this item (hidden for super admin) */
   tenantAdminOnly?: boolean;
+  /**
+   * When true, this item is part of the cloud-only feature set
+   * (pricing / quota / usage). Hidden in on-prem builds where
+   * NEXT_PUBLIC_ARC_CLOUD_FEATURES_ENABLED is unset / 'false'.
+   * The page code stays in the tree — only the nav entry hides
+   * and a notFound() guard kicks in if someone hits the URL directly.
+   */
+  cloudOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -67,9 +75,9 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: 'nav.plans', href: '/admin/plans', icon: CreditCard, iconColor: 'text-emerald-500' },
       { label: 'nav.features', href: '/admin/features', icon: Layers, iconColor: 'text-cyan-500' },
-      { label: 'nav.pricing', href: '/admin/pricing', icon: DollarSign, iconColor: 'text-green-500' },
-      { label: 'nav.quota', href: '/admin/quota', icon: Gauge, iconColor: 'text-red-500' },
-      { label: 'nav.usage', href: '/admin/usage', icon: BarChart3, iconColor: 'text-indigo-500' },
+      { label: 'nav.pricing', href: '/admin/pricing', icon: DollarSign, iconColor: 'text-green-500', cloudOnly: true },
+      { label: 'nav.quota', href: '/admin/quota', icon: Gauge, iconColor: 'text-red-500', cloudOnly: true },
+      { label: 'nav.usage', href: '/admin/usage', icon: BarChart3, iconColor: 'text-indigo-500', cloudOnly: true },
       { label: 'nav.licenses', href: '/admin/licenses', icon: FileText, iconColor: 'text-slate-500', superAdminOnly: true },
     ],
   },

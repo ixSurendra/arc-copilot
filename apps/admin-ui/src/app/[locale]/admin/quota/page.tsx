@@ -1,7 +1,9 @@
 'use client';
 
+import { notFound } from 'next/navigation';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { isCloudFeaturesEnabled } from '@/lib/feature-flags';
 import { Loader2, Search, ShoppingCart, Gauge } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/shared/page-header';
@@ -44,6 +46,9 @@ interface TopUpPricingWithFeature extends TopUpPricing {
 /* -------------------------------------------------------------------------- */
 
 export default function QuotaPage() {
+  // Cloud-only surface — gated off in arc-copilot's on-prem build.
+  if (!isCloudFeaturesEnabled()) notFound();
+
   const t = useTranslations('quota');
   const tc = useTranslations('common');
 
