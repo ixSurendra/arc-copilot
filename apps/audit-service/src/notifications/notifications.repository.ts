@@ -7,7 +7,7 @@ import {
   NotificationLog,
   PaginatedResponse,
   NotificationChannel,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class NotificationsRepository {

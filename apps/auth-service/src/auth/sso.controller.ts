@@ -9,7 +9,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { Public } from '@org/shared';
+import { Public } from '@arc/shared';
 import type { Request, Response } from 'express';
 
 /**

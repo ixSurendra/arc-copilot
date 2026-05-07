@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { OnPremLicenseService } from './on-prem-license.service';
 import { ConfigService } from '@nestjs/config';
-import { LicenseStatus } from '@org/shared';
+import { LicenseStatus } from '@arc/shared';
 
 /**
  * Cron job that re-validates the on-prem license every 24 hours.

@@ -1,6 +1,6 @@
 import { Controller, Get, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { TenantAdminGuard, TenantScopeInterceptor, SuperAdminGuard } from '@org/shared';
+import { TenantAdminGuard, TenantScopeInterceptor, SuperAdminGuard } from '@arc/shared';
 import { DashboardService } from './dashboard.service';
 
 @ApiTags('Admin Dashboard')

@@ -5,7 +5,7 @@ import {
   QueryNotificationLogDto,
   NotificationLog,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class NotificationsService {

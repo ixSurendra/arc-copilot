@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma';
 import { LicensePrismaService } from '../prisma/license-prisma.service';
-import { PaginatedResponse } from '@org/shared';
+import { PaginatedResponse } from '@arc/shared';
 
 @Injectable()
 export class PricingRepository {

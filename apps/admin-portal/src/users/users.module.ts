@@ -7,7 +7,7 @@ import {
   TENANT_SERVICE_PORT,
   AUDIT_SERVICE_PORT,
   MailModule,
-} from '@org/shared';
+} from '@arc/shared';
 import { AdminUsersController } from './users.controller';
 import { AdminUsersService } from './users.service';
 

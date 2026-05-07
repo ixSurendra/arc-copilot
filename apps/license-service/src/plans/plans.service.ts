@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PlansRepository } from './plans.repository';
-import { CreatePlanDto, SetPlanQuotaDto, PaginatedResponse } from '@org/shared';
+import { CreatePlanDto, SetPlanQuotaDto, PaginatedResponse } from '@arc/shared';
 
 @Injectable()
 export class PlansService {

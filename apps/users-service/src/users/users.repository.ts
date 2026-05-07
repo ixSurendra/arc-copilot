@@ -7,7 +7,7 @@ import {
   QueryUserDto,
   User,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class UsersRepository {

@@ -13,7 +13,7 @@ import {
   QueryNotificationLogDto,
   NotificationLog,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @ApiTags('Notification Logs')
 @ApiBearerAuth()

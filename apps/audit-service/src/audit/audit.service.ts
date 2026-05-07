@@ -6,7 +6,7 @@ import {
   CreateAuditLogDto,
   QueryAuditLogDto,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class AuditService {

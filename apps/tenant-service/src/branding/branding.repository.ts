@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { UpsertTenantBrandingDto, TenantBranding } from '@org/shared';
+import { UpsertTenantBrandingDto, TenantBranding } from '@arc/shared';
 
 @Injectable()
 export class BrandingRepository {

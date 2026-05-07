@@ -1,6 +1,6 @@
 import { IsOptional, IsDateString, IsEnum, IsInt, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BillingCycle } from '@org/shared';
+import { BillingCycle } from '@arc/shared';
 
 export class GenerateLicenseDto {
   @ApiProperty({ description: 'Tenant ID for which to generate the license' })

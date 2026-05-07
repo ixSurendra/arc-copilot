@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AUDIT_SERVICE_PORT } from '@org/shared';
+import { AUDIT_SERVICE_PORT } from '@arc/shared';
 import { AdminNotificationsController } from './notifications.controller';
 import { AdminNotificationsService } from './notifications.service';
 

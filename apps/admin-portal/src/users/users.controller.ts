@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Req, ParseIntPipe, HttpCode, HttpStatus, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { TenantAdminGuard, TenantScopeInterceptor } from '@org/shared';
+import { TenantAdminGuard, TenantScopeInterceptor } from '@arc/shared';
 import { AdminUsersService } from './users.service';
 
 @ApiTags('Admin Users')

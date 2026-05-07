@@ -1,5 +1,5 @@
 {
-  "name": "@org/auth-service",
+  "name": "@arc/auth-service",
   "version": "0.0.1",
   "private": true,
   "nx": {
@@ -116,7 +116,7 @@
     "@nestjs/microservices": "^11.0.0",
     "@nestjs/passport": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
-    "@org/shared": "workspace:*",
+    "@arc/shared": "workspace:*",
     "bcryptjs": "^3.0.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

@@ -6,7 +6,7 @@ import {
   EmailTemplate,
   PaginatedResponse,
   NotificationType,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class EmailTemplatesService {

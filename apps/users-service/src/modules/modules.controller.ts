@@ -22,7 +22,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ModulesService } from './modules.service';
-import { CreateModuleDto, ModuleMaster, PaginatedResponse, SuperAdminGuard } from '@org/shared';
+import { CreateModuleDto, ModuleMaster, PaginatedResponse, SuperAdminGuard } from '@arc/shared';
 
 @ApiTags('Modules')
 @ApiBearerAuth()

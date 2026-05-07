@@ -8,7 +8,7 @@ TABLE OF CONTENTS
   1. Overview
   2. Technology Stack
   3. Project Structure
-  4. Shared Library (@org/shared)
+  4. Shared Library (@arc/shared)
   5. Service Details
      5.1  Audit Service
      5.2  Tenant Service
@@ -151,7 +151,7 @@ Port Convention:
   │       └── package.json
   │
   ├── libs/
-  │   └── shared/               # Shared library (@org/shared)
+  │   └── shared/               # Shared library (@arc/shared)
   │       └── src/lib/
   │           ├── constants/    #   Service names, port numbers
   │           ├── dto/          #   DTOs (audit/, tenant/, users/, auth/, license/)
@@ -166,11 +166,11 @@ Port Convention:
   └── tsconfig.base.json        # Shared TypeScript config
 
 ================================================================================
-4. SHARED LIBRARY (@org/shared)
+4. SHARED LIBRARY (@arc/shared)
 ================================================================================
 
 The shared library contains everything reusable across services. Services
-import contracts via `import { ... } from '@org/shared'`.
+import contracts via `import { ... } from '@arc/shared'`.
 
 Constants:
   - Service names: AUTH_SERVICE, AUDIT_SERVICE, TENANT_SERVICE,
@@ -1181,10 +1181,10 @@ IDOR Protection:
     use findFirst({ where: { id, tenantId } }) when tenantId is provided.
 
 TCP Timeout Utility:
-  - sendWithTimeout<T>(client, pattern, data, timeoutMs=5000) in @org/shared
+  - sendWithTimeout<T>(client, pattern, data, timeoutMs=5000) in @arc/shared
   - Wraps ClientProxy.send() with RxJS timeout() operator
   - Throws HTTP 504 Gateway Timeout if downstream doesn't respond in time
-  - Import: import { sendWithTimeout } from '@org/shared'
+  - Import: import { sendWithTimeout } from '@arc/shared'
 
 On-Prem License System:
   - License files (.lic) contain JSON payload + RSA-SHA256 signature

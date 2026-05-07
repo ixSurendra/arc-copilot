@@ -9,7 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Public } from '@org/shared';
+import { Public } from '@arc/shared';
 import { BffAuthService } from './auth.service';
 import type { Request, Response } from 'express';
 

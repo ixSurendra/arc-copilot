@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { LICENSE_SERVICE_PORT } from '@org/shared';
+import { LICENSE_SERVICE_PORT } from '@arc/shared';
 import { TenantFeatureConfigController } from './tenant-feature-config.controller';
 import { TenantFeatureConfigService } from './tenant-feature-config.service';
 

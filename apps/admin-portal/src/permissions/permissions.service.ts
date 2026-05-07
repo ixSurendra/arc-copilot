@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { sendWithTimeout } from '@org/shared';
+import { sendWithTimeout } from '@arc/shared';
 
 @Injectable()
 export class AdminPermissionsService {

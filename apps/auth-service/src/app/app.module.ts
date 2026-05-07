@@ -3,7 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { PrismaModule, HealthModule, JwtAuthGuard, OnPremLicenseGuard } from '@org/shared';
+import { PrismaModule, HealthModule, JwtAuthGuard, OnPremLicenseGuard } from '@arc/shared';
 import { AuthModule } from '../auth/auth.module';
 import { CredentialsModule } from '../credentials/credentials.module';
 import { MfaModule } from '../mfa/mfa.module';

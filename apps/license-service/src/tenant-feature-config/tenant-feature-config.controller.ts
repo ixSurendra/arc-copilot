@@ -2,7 +2,7 @@ import { Controller, Get, Put, Delete, Param, Body, Query, ParseIntPipe, UseGuar
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TenantFeatureConfigService } from './tenant-feature-config.service';
-import { SetTenantFeatureConfigDto, QueryTenantFeatureConfigDto, SuperAdminGuard } from '@org/shared';
+import { SetTenantFeatureConfigDto, QueryTenantFeatureConfigDto, SuperAdminGuard } from '@arc/shared';
 
 @ApiTags('Tenant Feature Config')
 @ApiBearerAuth()

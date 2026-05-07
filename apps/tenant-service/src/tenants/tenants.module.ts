@@ -3,7 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TenantsController } from './tenants.controller';
 import { TenantsService } from './tenants.service';
 import { TenantsRepository } from './tenants.repository';
-import { USERS_SERVICE_PORT, LICENSE_SERVICE_PORT } from '@org/shared';
+import { USERS_SERVICE_PORT, LICENSE_SERVICE_PORT } from '@arc/shared';
 import { PlanHistoryModule } from '../plan-history/plan-history.module';
 
 @Module({

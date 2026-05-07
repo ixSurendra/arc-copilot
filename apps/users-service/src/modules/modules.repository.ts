@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UsersPrismaService } from '../prisma/users-prisma.service';
-import { CreateModuleDto, ModuleMaster, PaginatedResponse } from '@org/shared';
+import { CreateModuleDto, ModuleMaster, PaginatedResponse } from '@arc/shared';
 
 @Injectable()
 export class ModulesRepository {

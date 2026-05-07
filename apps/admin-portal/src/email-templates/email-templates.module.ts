@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TENANT_SERVICE_PORT } from '@org/shared';
+import { TENANT_SERVICE_PORT } from '@arc/shared';
 import { AdminEmailTemplatesController } from './email-templates.controller';
 import { AdminEmailTemplatesService } from './email-templates.service';
 

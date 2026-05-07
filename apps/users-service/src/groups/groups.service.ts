@@ -5,7 +5,7 @@ import {
   QueryGroupDto,
   Group,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class GroupsService {

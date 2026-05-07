@@ -49,7 +49,7 @@ ix-copilot/
 │   ├── users-service/         # Users, roles, groups, RBAC (10 tables)
 │   └── license-service/       # Plans, features, quotas, usage, on-prem (7 tables)
 ├── libs/
-│   └── shared/                # @org/shared — DTOs, enums, interfaces, guards, modules
+│   └── shared/                # @arc/shared — DTOs, enums, interfaces, guards, modules
 ├── tools/
 │   └── generate-license-keys.ts  # RSA key pair generator
 ├── docs/                      # All documentation
@@ -67,9 +67,9 @@ ix-copilot/
 
 ---
 
-## 4. Shared Library (`libs/shared` / `@org/shared`)
+## 4. Shared Library (`libs/shared` / `@arc/shared`)
 
-All reusable code lives here. Services import via `@org/shared`.
+All reusable code lives here. Services import via `@arc/shared`.
 
 ### 4.1 Constants (`constants/services.ts`)
 

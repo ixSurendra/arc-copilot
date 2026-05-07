@@ -12,7 +12,7 @@ import {
   PlanChangeType,
   SYSTEM_TENANT_ID,
   sendWithTimeout,
-} from '@org/shared';
+} from '@arc/shared';
 
 /**
  * Tier ordering used to classify plan changes as UPGRADE / DOWNGRADE / INITIAL.

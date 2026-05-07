@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AUTH_SERVICE_HTTP_PORT } from '@org/shared';
+import { AUTH_SERVICE_HTTP_PORT } from '@arc/shared';
 
 @Injectable()
 export class BffAuthService {

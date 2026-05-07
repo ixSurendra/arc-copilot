@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { FeaturesRepository } from './features.repository';
-import { CreateFeatureDto, PaginatedResponse } from '@org/shared';
+import { CreateFeatureDto, PaginatedResponse } from '@arc/shared';
 
 @Injectable()
 export class FeaturesService {

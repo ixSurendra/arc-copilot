@@ -9,7 +9,7 @@ import {
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { QuotaService } from './quota.service';
-import { CheckQuotaDto, SuperAdminGuard } from '@org/shared';
+import { CheckQuotaDto, SuperAdminGuard } from '@arc/shared';
 
 @ApiTags('Quota')
 @ApiBearerAuth()

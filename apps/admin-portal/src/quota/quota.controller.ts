@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { SuperAdminGuard } from '@org/shared';
+import { SuperAdminGuard } from '@arc/shared';
 import { AdminQuotaService } from './quota.service';
 
 @ApiTags('Admin Quota')

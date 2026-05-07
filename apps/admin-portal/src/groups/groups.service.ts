@@ -1,6 +1,6 @@
 import { Inject, Injectable, HttpException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { sendWithTimeout, rpcStatusCode, rpcMessage } from '@org/shared';
+import { sendWithTimeout, rpcStatusCode, rpcMessage } from '@arc/shared';
 
 @Injectable()
 export class AdminGroupsService {

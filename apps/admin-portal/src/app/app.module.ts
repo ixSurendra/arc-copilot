@@ -13,7 +13,7 @@ import {
   LICENSE_SERVICE_PORT,
   AUTH_SERVICE_PORT,
   AUDIT_SERVICE_PORT,
-} from '@org/shared';
+} from '@arc/shared';
 import { validationSchema } from '../config';
 import { DashboardModule } from '../dashboard/dashboard.module';
 import { AdminTenantsModule } from '../tenants/tenants.module';

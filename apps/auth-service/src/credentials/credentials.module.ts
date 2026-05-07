@@ -6,7 +6,7 @@ import {
   USERS_SERVICE_PORT,
   TENANT_SERVICE_PORT,
   AUDIT_SERVICE_PORT,
-} from '@org/shared';
+} from '@arc/shared';
 import { CredentialsController } from './credentials.controller';
 import { CredentialsService } from './credentials.service';
 import { CredentialsRepository } from './credentials.repository';

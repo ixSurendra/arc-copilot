@@ -15,7 +15,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { BrandingService } from './branding.service';
-import { UpsertTenantBrandingDto, TenantBranding } from '@org/shared';
+import { UpsertTenantBrandingDto, TenantBranding } from '@arc/shared';
 
 @ApiTags('Branding')
 @ApiBearerAuth()

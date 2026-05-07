@@ -13,7 +13,7 @@ import {
   AuditLog,
   AuditLogWithDetail,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @ApiTags('Audit Logs')
 @Controller('audit-logs')

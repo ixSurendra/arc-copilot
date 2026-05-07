@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { Module } from '@nestjs/common';
 import { ClientProxy, ClientsModule, Transport } from '@nestjs/microservices';
-import { AUTH_SERVICE, AUTH_SERVICE_PORT, AUDIT_SERVICE, AUDIT_SERVICE_PORT } from '@org/shared';
+import { AUTH_SERVICE, AUTH_SERVICE_PORT, AUDIT_SERVICE, AUDIT_SERVICE_PORT } from '@arc/shared';
 import { firstValueFrom } from 'rxjs';
 
 @Module({

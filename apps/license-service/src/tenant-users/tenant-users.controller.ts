@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
-import { sendWithTimeout } from '@org/shared';
+import { sendWithTimeout } from '@arc/shared';
 
 /**
  * Proxies user count requests to users-service.

@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
-import { generatePassword, MailService, sendWithTimeout, rpcStatusCode, rpcMessage } from '@org/shared';
+import { generatePassword, MailService, sendWithTimeout, rpcStatusCode, rpcMessage } from '@arc/shared';
 
 @Injectable()
 export class AdminUsersService {

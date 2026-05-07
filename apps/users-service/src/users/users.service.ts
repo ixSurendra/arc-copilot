@@ -19,7 +19,7 @@ import {
   UserWithRoles,
   PaginatedResponse,
   RESERVED_ROLES,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class UsersService {

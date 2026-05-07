@@ -10,7 +10,7 @@ import {
   LicensePayload,
   LicenseValidationResult,
   validateLicenseFile,
-} from '@org/shared';
+} from '@arc/shared';
 import { LicensePrismaService } from '../prisma/license-prisma.service';
 
 @Injectable()

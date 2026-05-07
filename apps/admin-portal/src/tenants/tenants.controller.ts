@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, Req, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { SuperAdminGuard } from '@org/shared';
+import { SuperAdminGuard } from '@arc/shared';
 import { AdminTenantsService } from './tenants.service';
 
 @ApiTags('Admin Tenants')

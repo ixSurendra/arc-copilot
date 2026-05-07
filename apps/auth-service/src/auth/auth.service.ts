@@ -12,7 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { AuthRepository } from './auth.repository';
-import type { LoginDto, LoginResponseDto, AuthUser } from '@org/shared';
+import type { LoginDto, LoginResponseDto, AuthUser } from '@arc/shared';
 
 @Injectable()
 export class AuthService {

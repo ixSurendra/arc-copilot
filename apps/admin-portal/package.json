@@ -1,5 +1,5 @@
 {
-  "name": "@org/admin-portal",
+  "name": "@arc/admin-portal",
   "version": "0.0.1",
   "private": true,
   "nx": {
@@ -83,7 +83,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/microservices": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
-    "@org/shared": "workspace:*",
+    "@arc/shared": "workspace:*",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "tslib": "^2.3.0"

@@ -14,7 +14,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { AuthConfigService } from './auth-config.service';
-import { CreateAuthConfigDto, CreateSsoProviderDto } from '@org/shared';
+import { CreateAuthConfigDto, CreateSsoProviderDto } from '@arc/shared';
 
 @ApiTags('Auth Config')
 @Controller('auth-config')

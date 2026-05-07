@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ScheduleModule } from '@nestjs/schedule';
-import { AUDIT_SERVICE, AUDIT_SERVICE_PORT } from '@org/shared';
+import { AUDIT_SERVICE, AUDIT_SERVICE_PORT } from '@arc/shared';
 import { OnPremLicenseController } from './on-prem-license.controller';
 import { OnPremLicenseService } from './on-prem-license.service';
 import { OnPremGuard } from './on-prem.guard';

@@ -12,7 +12,7 @@ import {
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { PricingService } from './pricing.service';
-import { CreatePlanPricingDto, SuperAdminGuard } from '@org/shared';
+import { CreatePlanPricingDto, SuperAdminGuard } from '@arc/shared';
 
 @ApiTags('Pricing')
 @ApiBearerAuth()

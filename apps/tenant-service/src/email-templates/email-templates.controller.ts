@@ -23,7 +23,7 @@ import {
   EmailTemplate,
   PaginatedResponse,
   NotificationType,
-} from '@org/shared';
+} from '@arc/shared';
 
 @ApiTags('Email Templates')
 @ApiBearerAuth()

@@ -26,7 +26,7 @@ import {
   TenantAnalytics,
   PaginatedResponse,
   SuperAdminGuard,
-} from '@org/shared';
+} from '@arc/shared';
 
 @ApiTags('Tenants')
 @ApiBearerAuth()

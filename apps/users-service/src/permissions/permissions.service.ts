@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PermissionsRepository } from './permissions.repository';
-import { CreatePermissionDto, PermissionMaster, PaginatedResponse } from '@org/shared';
+import { CreatePermissionDto, PermissionMaster, PaginatedResponse } from '@arc/shared';
 
 @Injectable()
 export class PermissionsService {

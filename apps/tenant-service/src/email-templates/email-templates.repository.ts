@@ -8,7 +8,7 @@ import {
   PaginatedResponse,
   NotificationType,
   DEFAULT_TEMPLATES,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class EmailTemplatesRepository {

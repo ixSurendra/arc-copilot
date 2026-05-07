@@ -14,7 +14,7 @@ import { LicenseValidationResult } from './license-validator.interfaces';
  *
  * Usage in your main app's AppModule:
  *
- *   import { OnPremLicenseGuard } from '@org/shared';
+ *   import { OnPremLicenseGuard } from '@arc/shared';
  *
  *   @Module({
  *     providers: [

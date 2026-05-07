@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Req, ParseIntPipe, HttpCode, HttpStatus, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { TenantAdminGuard, TenantScopeInterceptor } from '@org/shared';
+import { TenantAdminGuard, TenantScopeInterceptor } from '@arc/shared';
 import { AdminGroupsService } from './groups.service';
 
 @ApiTags('Admin Groups')

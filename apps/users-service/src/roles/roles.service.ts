@@ -7,7 +7,7 @@ import {
   Role,
   PaginatedResponse,
   RESERVED_ROLES,
-} from '@org/shared';
+} from '@arc/shared';
 
 const RESERVED_ROLE_NAMES = Object.values(RESERVED_ROLES);
 

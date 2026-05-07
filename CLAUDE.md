@@ -28,15 +28,15 @@
 - Do NOT write unit tests, integration tests, or e2e tests as part of feature implementation
 - You may run existing tests when asked to verify changes
 
-# Shared Library (`@org/shared`)
+# Shared Library (`@arc/shared`)
 
 - Any code reusable across microservices MUST go in `libs/shared` — DTOs, interfaces, enums, constants, utilities, modules (health, prisma, swagger)
-- Services import shared contracts via `@org/shared`; implementation stays in the app
-- Before writing new code in an app, check if `@org/shared` already has it or if it should live there
+- Services import shared contracts via `@arc/shared`; implementation stays in the app
+- Before writing new code in an app, check if `@arc/shared` already has it or if it should live there
 
 # Production Safety
 
-- Swagger must NEVER be accessible in production. Use `setupSwagger()` from `@org/shared` — it auto-skips in production via dynamic import
+- Swagger must NEVER be accessible in production. Use `setupSwagger()` from `@arc/shared` — it auto-skips in production via dynamic import
 - Prisma Studio and `prisma migrate dev` must NEVER run in production. Guard nx targets with `NODE_ENV` checks; use `prisma:migrate:deploy` for production migrations
 - Dev-only tools (Swagger, Prisma Studio, debug endpoints) must be gated behind `NODE_ENV !== 'production'`
 
@@ -85,14 +85,14 @@ ix-copilot is a **multi-tenant SaaS foundation layer** — Nx monorepo, 5 NestJS
 - **Inter-service**: `@MessagePattern` for request-response, `@EventPattern` for fire-and-forget (audit). `ClientsModule.register()` + `firstValueFrom(client.send(...))`.
 - **Multi-tenancy**: `tenantId` on all entities, `TenantScopeInterceptor` enforces isolation, `SYSTEM_TENANT_ID = 0`.
 - **RBAC**: `SuperAdminGuard` (system tenant) / `TenantAdminGuard`. Guard order: JwtAuthGuard → Auth guard → TenantScopeInterceptor → AuditLoggingInterceptor.
-- **Shared library** (`@org/shared`): DTOs, enums, interfaces, guards, interceptors, PrismaModule, HealthModule, MailModule, setupSwagger.
+- **Shared library** (`@arc/shared`): DTOs, enums, interfaces, guards, interceptors, PrismaModule, HealthModule, MailModule, setupSwagger.
 - **DB per service**: Each service owns its Prisma schema at `apps/<service>/prisma/schema.prisma`. 30 tables across 5 DBs.
 - **Naming**: DTOs = `Create/Update/Query<Resource>Dto`, TCP = `snake_case`, Enums = `UPPER_SNAKE_CASE`, DB columns = camelCase → UPPER_SNAKE_CASE via `@map`.
 - **Email templates**: Handlebars-based, hierarchical fallback (tenant → global tenantId=0 → hardcoded). Branding (TENANT_BRANDINGS) + templates (EMAIL_TEMPLATES) in tenant-service DB. Logs in NOTIFICATION_LOGS (audit-service). See `docs/notification-templates.md`.
-- **Correlation ID**: `CorrelationIdMiddleware` (from `@org/shared`) applied in every service `main.ts`. Reads/generates `x-request-id` UUID, attaches to `req.requestId`, echoes on response header, included in error responses.
+- **Correlation ID**: `CorrelationIdMiddleware` (from `@arc/shared`) applied in every service `main.ts`. Reads/generates `x-request-id` UUID, attaches to `req.requestId`, echoes on response header, included in error responses.
 - **Rate limiting**: `ThrottlerModule` on admin-portal (entry point only). 20 req/s + 300 req/min per IP. Guard order: ThrottlerGuard → OnPremLicenseGuard → JwtAuthGuard.
 - **IDOR protection**: All `:id` endpoints pass `requestingTenantId` (from JWT) through BFF → TCP payload → backend service → repository `findFirst({where:{id,tenantId}})`. SUPER_ADMIN exempt (passes `undefined`).
-- **TCP timeout utility**: Use `sendWithTimeout(client, pattern, data, 5000)` from `@org/shared` instead of raw `firstValueFrom()`. Returns HTTP 504 on timeout. Applied to all 119 TCP calls in admin-portal services. `retryAttempts: 0` in all ClientsModule entries.
+- **TCP timeout utility**: Use `sendWithTimeout(client, pattern, data, 5000)` from `@arc/shared` instead of raw `firstValueFrom()`. Returns HTTP 504 on timeout. Applied to all 119 TCP calls in admin-portal services. `retryAttempts: 0` in all ClientsModule entries.
 - **Helmet**: `app.use(helmet())` in all 6 service + admin-portal `main.ts`. Adds X-Content-Type-Options, X-Frame-Options, HSTS, and other security headers automatically.
 
 ## Plans & Features

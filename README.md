@@ -35,7 +35,7 @@ Phase 0 — fork in progress. See `ARCHITECTURE.txt` for the full system map (ca
 ## Phase 1 build chunks
 
 1. ~~Fork the tree~~ (this commit)
-2. Rename `@org/shared` → `@arc/shared`
+2. Rename `@org/*` → `@arc/*` (every workspace package + custom condition)
 3. Rename DBs to `arc_*`, reallocate ports (TCP 5001–5006, HTTP 6001–6006)
 4. Schema migrations: `dependsOn` columns + Arc enum values
 5. Generate fresh RSA license-signing keys

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { USERS_SERVICE_PORT } from '@org/shared';
+import { USERS_SERVICE_PORT } from '@arc/shared';
 import { TenantUsersController } from './tenant-users.controller';
 
 @Module({

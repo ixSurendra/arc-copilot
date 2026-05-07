@@ -22,7 +22,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   Public,
-} from '@org/shared';
+} from '@arc/shared';
 
 @ApiTags('Credentials')
 @Controller('credentials')

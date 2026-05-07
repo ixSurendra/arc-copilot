@@ -27,15 +27,15 @@
 - Do NOT generate, create, or modify test files (*.spec.ts, *.test.ts, *.e2e-spec.ts) unless explicitly asked
 - Do NOT write unit tests, integration tests, or e2e tests as part of feature implementation
 
-# Shared Library (`@org/shared`)
+# Shared Library (`@arc/shared`)
 
 - Any code reusable across microservices MUST go in `libs/shared` — DTOs, interfaces, enums, constants, utilities, modules (health, prisma, swagger)
-- Services import shared contracts via `@org/shared`; implementation stays in the app
-- Before writing new code in an app, check if `@org/shared` already has it or if it should live there
+- Services import shared contracts via `@arc/shared`; implementation stays in the app
+- Before writing new code in an app, check if `@arc/shared` already has it or if it should live there
 
 # Production Safety
 
-- Swagger must NEVER be accessible in production. Use `setupSwagger()` from `@org/shared` — it auto-skips in production via dynamic import
+- Swagger must NEVER be accessible in production. Use `setupSwagger()` from `@arc/shared` — it auto-skips in production via dynamic import
 - Prisma Studio and `prisma migrate dev` must NEVER run in production. Guard nx targets with `NODE_ENV` checks; use `prisma:migrate:deploy` for production migrations
 - Dev-only tools (Swagger, Prisma Studio, debug endpoints) must be gated behind `NODE_ENV !== 'production'`
 

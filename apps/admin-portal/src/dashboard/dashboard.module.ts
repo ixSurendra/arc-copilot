@@ -5,7 +5,7 @@ import {
   USERS_SERVICE_PORT,
   LICENSE_SERVICE_PORT,
   AUDIT_SERVICE_PORT,
-} from '@org/shared';
+} from '@arc/shared';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 

@@ -1,8 +1,8 @@
 import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { BillingCycle, Public, GenerateLicenseDto } from '@org/shared';
-import type { LicenseValidationResult } from '@org/shared';
+import { BillingCycle, Public, GenerateLicenseDto } from '@arc/shared';
+import type { LicenseValidationResult } from '@arc/shared';
 import { OnPremLicenseService } from './on-prem-license.service';
 import { OnPremGuard } from './on-prem.guard';
 

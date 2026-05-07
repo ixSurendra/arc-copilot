@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TENANT_SERVICE_PORT } from '@org/shared';
+import { TENANT_SERVICE_PORT } from '@arc/shared';
 import { QuotaController } from './quota.controller';
 import { QuotaService } from './quota.service';
 import { QuotaRepository } from './quota.repository';

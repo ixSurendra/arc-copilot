@@ -19,7 +19,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { PermissionsService } from './permissions.service';
-import { CreatePermissionDto, PermissionMaster, PaginatedResponse, SuperAdminGuard } from '@org/shared';
+import { CreatePermissionDto, PermissionMaster, PaginatedResponse, SuperAdminGuard } from '@arc/shared';
 
 @ApiTags('Permissions')
 @ApiBearerAuth()

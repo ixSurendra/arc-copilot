@@ -18,7 +18,7 @@ import {
   TenantScopeInterceptor,
   UpsertEmailTemplateDto,
   QueryEmailTemplateDto,
-} from '@org/shared';
+} from '@arc/shared';
 import { AdminEmailTemplatesService } from './email-templates.service';
 
 @ApiTags('Admin Email Templates')

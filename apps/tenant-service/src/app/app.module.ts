@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule, HealthModule, JwtAuthGuard, OnPremLicenseGuard } from '@org/shared';
+import { PrismaModule, HealthModule, JwtAuthGuard, OnPremLicenseGuard } from '@arc/shared';
 import { TenantsModule } from '../tenants/tenants.module';
 import { BillingsModule } from '../billings/billings.module';
 import { InvoicesModule } from '../invoices/invoices.module';

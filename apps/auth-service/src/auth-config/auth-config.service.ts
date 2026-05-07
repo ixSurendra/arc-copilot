@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { AuthConfigRepository } from './auth-config.repository';
-import type { CreateAuthConfigDto, CreateSsoProviderDto } from '@org/shared';
+import type { CreateAuthConfigDto, CreateSsoProviderDto } from '@arc/shared';
 
 @Injectable()
 export class AuthConfigService {

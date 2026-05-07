@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ModulesRepository } from './modules.repository';
-import { CreateModuleDto, ModuleMaster, PaginatedResponse } from '@org/shared';
+import { CreateModuleDto, ModuleMaster, PaginatedResponse } from '@arc/shared';
 
 @Injectable()
 export class ModulesService {

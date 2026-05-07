@@ -13,13 +13,13 @@ import { firstValueFrom } from 'rxjs';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { CredentialsRepository } from './credentials.repository';
-import { MailService } from '@org/shared';
+import { MailService } from '@arc/shared';
 import type {
   RegisterCredentialsDto,
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
-} from '@org/shared';
+} from '@arc/shared';
 
 const SALT_ROUNDS = 12;
 const RESET_TOKEN_EXPIRY_HOURS = 1;

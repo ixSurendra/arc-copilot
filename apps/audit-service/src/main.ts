@@ -2,7 +2,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';
-import { AUDIT_SERVICE_PORT, AUDIT_SERVICE_HTTP_PORT, setupSwagger, AllExceptionsFilter, CorrelationIdMiddleware } from '@org/shared';
+import { AUDIT_SERVICE_PORT, AUDIT_SERVICE_HTTP_PORT, setupSwagger, AllExceptionsFilter, CorrelationIdMiddleware } from '@arc/shared';
 import helmet from 'helmet';
 import * as express from 'express';
 

@@ -1,6 +1,6 @@
 import { Controller, Get, Put, Delete, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { SuperAdminGuard } from '@org/shared';
+import { SuperAdminGuard } from '@arc/shared';
 import { TenantFeatureConfigService } from './tenant-feature-config.service';
 
 @ApiTags('Tenant Feature Config')

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BrandingRepository } from './branding.repository';
-import { UpsertTenantBrandingDto, TenantBranding } from '@org/shared';
+import { UpsertTenantBrandingDto, TenantBranding } from '@arc/shared';
 
 @Injectable()
 export class BrandingService {

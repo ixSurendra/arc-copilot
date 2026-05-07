@@ -8,7 +8,7 @@ The system spans three services:
 
 - **tenant-service** -- Stores branding (TENANT_BRANDINGS) and email templates (EMAIL_TEMPLATES)
 - **audit-service** -- Stores notification delivery logs (NOTIFICATION_LOGS)
-- **Shared library** (`@org/shared`) -- Contains the MailService, default Handlebars templates, and related DTOs
+- **Shared library** (`@arc/shared`) -- Contains the MailService, default Handlebars templates, and related DTOs
 
 ## Email Types
 

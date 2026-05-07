@@ -12,7 +12,7 @@ import {
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { FeaturesService } from './features.service';
-import { CreateFeatureDto, SuperAdminGuard } from '@org/shared';
+import { CreateFeatureDto, SuperAdminGuard } from '@arc/shared';
 
 @ApiTags('Features')
 @ApiBearerAuth()

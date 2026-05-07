@@ -8,7 +8,7 @@ import {
   AuditLogWithDetail,
   AuditLogStatus,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class AuditRepository {

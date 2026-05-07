@@ -11,10 +11,10 @@ The audit service is the central event log for the platform. It records who did 
 | TCP (RPC)  | `0.0.0.0`             | `3002` |
 | HTTP       | `http://localhost`    | `4002` |
 
-The constants are exported from `@org/shared`:
+The constants are exported from `@arc/shared`:
 
 ```ts
-import { AUDIT_SERVICE_PORT, AUDIT_SERVICE_HTTP_PORT } from '@org/shared';
+import { AUDIT_SERVICE_PORT, AUDIT_SERVICE_HTTP_PORT } from '@arc/shared';
 ```
 
 ---
@@ -26,7 +26,7 @@ Use `ClientsModule.register` (static) or `ClientsModule.registerAsync` (config-d
 ```ts
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AUDIT_SERVICE, AUDIT_SERVICE_PORT } from '@org/shared';
+import { AUDIT_SERVICE, AUDIT_SERVICE_PORT } from '@arc/shared';
 
 @Module({
   imports: [
@@ -47,7 +47,7 @@ Inject the client in a service:
 ```ts
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { AUDIT_SERVICE } from '@org/shared';
+import { AUDIT_SERVICE } from '@arc/shared';
 
 @Injectable()
 export class YourService {
@@ -59,7 +59,7 @@ export class YourService {
 
 ---
 
-## Imports from `@org/shared`
+## Imports from `@arc/shared`
 
 Everything you need is exported from the shared library. Never define your own types locally.
 
@@ -81,7 +81,7 @@ import {
   AUDIT_SERVICE,
   AUDIT_SERVICE_PORT,
   AUDIT_SERVICE_HTTP_PORT,
-} from '@org/shared';
+} from '@arc/shared';
 ```
 
 ---
@@ -95,7 +95,7 @@ import {
 Use this for the common case: record that something happened and move on. The audit service persists the log asynchronously.
 
 ```ts
-import { CreateAuditLogDto, AuditLogStatus } from '@org/shared';
+import { CreateAuditLogDto, AuditLogStatus } from '@arc/shared';
 
 const payload: CreateAuditLogDto = {
   tenantId: 'tenant-abc',         // required — isolates data per tenant
@@ -125,7 +125,7 @@ this.auditClient.emit('audit_log_created', payload);
 **Pattern:** `{ cmd: 'get_audit_logs' }` (MessagePattern — returns paginated list)
 
 ```ts
-import { QueryAuditLogDto, AuditLog, PaginatedResponse } from '@org/shared';
+import { QueryAuditLogDto, AuditLog, PaginatedResponse } from '@arc/shared';
 import { lastValueFrom } from 'rxjs';
 
 const query: QueryAuditLogDto = {
@@ -165,7 +165,7 @@ const result = await lastValueFrom(
 **Pattern:** `{ cmd: 'get_audit_log_by_id' }` (MessagePattern — returns full log with detail)
 
 ```ts
-import { AuditLogWithDetail } from '@org/shared';
+import { AuditLogWithDetail } from '@arc/shared';
 import { lastValueFrom } from 'rxjs';
 
 const log = await lastValueFrom(

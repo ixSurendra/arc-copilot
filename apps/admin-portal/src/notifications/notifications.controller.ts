@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query, Req, ParseIntPipe, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { TenantAdminGuard, TenantScopeInterceptor } from '@org/shared';
+import { TenantAdminGuard, TenantScopeInterceptor } from '@arc/shared';
 import { AdminNotificationsService } from './notifications.service';
 
 @ApiTags('Admin Notification Logs')

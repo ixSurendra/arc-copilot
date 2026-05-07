@@ -11,7 +11,7 @@ import {
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UsageService } from './usage.service';
-import { RecordUsageDto, SuperAdminGuard, Public } from '@org/shared';
+import { RecordUsageDto, SuperAdminGuard, Public } from '@arc/shared';
 
 @ApiTags('Usage')
 @Controller('usage')

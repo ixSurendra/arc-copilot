@@ -5,7 +5,7 @@ import {
   QueryBillingDto,
   TenantBilling,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class BillingsService {

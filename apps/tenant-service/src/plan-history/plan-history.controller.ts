@@ -11,7 +11,7 @@ import {
   QueryPlanHistoryDto,
   TenantPlanHistory,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @ApiTags('Plan History')
 @Controller('plan-history')

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { PrismaModule, HealthModule, JwtAuthGuard, OnPremLicenseGuard, TENANT_SERVICE_PORT } from '@org/shared';
+import { PrismaModule, HealthModule, JwtAuthGuard, OnPremLicenseGuard, TENANT_SERVICE_PORT } from '@arc/shared';
 import { LicensePrismaService } from '../prisma/license-prisma.service';
 import { databaseConfig, redisConfig, validationSchema } from '../config';
 import { RedisModule } from '../redis/redis.module';

@@ -13,7 +13,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshTokenDto, LoginResponseDto, Public } from '@org/shared';
+import { LoginDto, RefreshTokenDto, LoginResponseDto, Public } from '@arc/shared';
 import type { Request } from 'express';
 
 @ApiTags('Auth')

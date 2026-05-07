@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PricingRepository } from './pricing.repository';
-import { CreatePlanPricingDto, PaginatedResponse } from '@org/shared';
+import { CreatePlanPricingDto, PaginatedResponse } from '@arc/shared';
 
 @Injectable()
 export class PricingService {

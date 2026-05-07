@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UsersPrismaService } from '../prisma/users-prisma.service';
-import { CreatePermissionDto, PermissionMaster, PaginatedResponse } from '@org/shared';
+import { CreatePermissionDto, PermissionMaster, PaginatedResponse } from '@arc/shared';
 
 @Injectable()
 export class PermissionsRepository {

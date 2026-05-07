@@ -15,7 +15,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { MfaService } from './mfa.service';
-import { MfaSetupDto, MfaVerifyDto } from '@org/shared';
+import { MfaSetupDto, MfaVerifyDto } from '@arc/shared';
 
 @ApiTags('MFA')
 @Controller('mfa')

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { LICENSE_SERVICE_PORT } from '@org/shared';
+import { LICENSE_SERVICE_PORT } from '@arc/shared';
 import { AdminFeaturesController } from './features.controller';
 import { AdminFeaturesService } from './features.service';
 

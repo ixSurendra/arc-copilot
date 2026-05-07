@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import Redis from 'ioredis';
 import { QuotaRepository } from './quota.repository';
 import { REDIS_CLIENT } from '../redis/redis.module';
-import type { CheckQuotaDto, QuotaCheckResult } from '@org/shared';
+import type { CheckQuotaDto, QuotaCheckResult } from '@arc/shared';
 
 @Injectable()
 export class QuotaService {

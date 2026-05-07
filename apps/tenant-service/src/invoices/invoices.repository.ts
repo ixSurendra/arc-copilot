@@ -6,7 +6,7 @@ import {
   QueryInvoiceDto,
   Invoice,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class InvoicesRepository {

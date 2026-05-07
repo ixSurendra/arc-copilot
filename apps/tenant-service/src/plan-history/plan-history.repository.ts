@@ -6,7 +6,7 @@ import {
   QueryPlanHistoryDto,
   TenantPlanHistory,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class PlanHistoryRepository {

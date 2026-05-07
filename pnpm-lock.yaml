@@ -189,7 +189,7 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.0
         version: 11.1.14(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.14)
-      '@org/shared':
+      '@arc/shared':
         specifier: workspace:*
         version: link:../../libs/shared
       reflect-metadata:
@@ -345,7 +345,7 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.0
         version: 11.1.14(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.14)
-      '@org/shared':
+      '@arc/shared':
         specifier: workspace:*
         version: link:../../libs/shared
       reflect-metadata:
@@ -378,7 +378,7 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.0
         version: 11.1.14(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.14)
-      '@org/shared':
+      '@arc/shared':
         specifier: workspace:*
         version: link:../../libs/shared
       bcryptjs:
@@ -427,7 +427,7 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.0
         version: 11.1.14(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.14)
-      '@org/shared':
+      '@arc/shared':
         specifier: workspace:*
         version: link:../../libs/shared
       ioredis:
@@ -457,7 +457,7 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.0
         version: 11.1.14(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.14)
-      '@org/shared':
+      '@arc/shared':
         specifier: workspace:*
         version: link:../../libs/shared
       reflect-metadata:
@@ -484,7 +484,7 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.0
         version: 11.1.14(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.14)
-      '@org/shared':
+      '@arc/shared':
         specifier: workspace:*
         version: link:../../libs/shared
       reflect-metadata:

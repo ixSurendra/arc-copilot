@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import Redis from 'ioredis';
 import { UsageRepository } from './usage.repository';
 import { REDIS_CLIENT } from '../redis/redis.module';
-import type { RecordUsageDto, PaginatedResponse } from '@org/shared';
+import type { RecordUsageDto, PaginatedResponse } from '@arc/shared';
 
 @Injectable()
 export class UsageService {

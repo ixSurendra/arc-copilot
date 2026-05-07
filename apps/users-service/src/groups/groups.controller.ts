@@ -31,7 +31,7 @@ import {
   PaginatedResponse,
   TenantAdminGuard,
   TenantScopeInterceptor,
-} from '@org/shared';
+} from '@arc/shared';
 
 @ApiTags('Groups')
 @ApiBearerAuth()

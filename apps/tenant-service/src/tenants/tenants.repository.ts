@@ -8,7 +8,7 @@ import {
   Tenant,
   TenantAnalytics,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 /**
  * Belt-and-braces check that rejects any attempt to write a numeric-only string

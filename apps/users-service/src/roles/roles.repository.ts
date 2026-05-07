@@ -7,7 +7,7 @@ import {
   AssignRolePermissionsDto,
   Role,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @Injectable()
 export class RolesRepository {

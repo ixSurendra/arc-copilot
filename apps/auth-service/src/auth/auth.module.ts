@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { USERS_SERVICE_PORT, TENANT_SERVICE_PORT } from '@org/shared';
+import { USERS_SERVICE_PORT, TENANT_SERVICE_PORT } from '@arc/shared';
 import { AuthController } from './auth.controller';
 import { SsoController } from './sso.controller';
 import { AuthService } from './auth.service';

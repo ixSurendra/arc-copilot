@@ -20,7 +20,7 @@ import {
   QueryBillingDto,
   TenantBilling,
   PaginatedResponse,
-} from '@org/shared';
+} from '@arc/shared';
 
 @ApiTags('Billings')
 @Controller('billings')

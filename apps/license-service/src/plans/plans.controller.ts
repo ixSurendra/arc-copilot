@@ -13,7 +13,7 @@ import {
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { PlansService } from './plans.service';
-import { CreatePlanDto, SetPlanQuotaDto, SuperAdminGuard } from '@org/shared';
+import { CreatePlanDto, SetPlanQuotaDto, SuperAdminGuard } from '@arc/shared';
 
 @ApiTags('Plans')
 @ApiBearerAuth()

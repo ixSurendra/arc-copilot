@@ -1,5 +1,5 @@
 {
-  "name": "@org/admin-ui",
+  "name": "@arc/admin-ui",
   "targets": {
     "build": {
       "executor": "nx:run-commands",

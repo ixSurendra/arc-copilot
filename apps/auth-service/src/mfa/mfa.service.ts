@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { MfaRepository } from './mfa.repository';
-import type { MfaSetupDto, MfaVerifyDto } from '@org/shared';
+import type { MfaSetupDto, MfaVerifyDto } from '@arc/shared';
 
 @Injectable()
 export class MfaService {

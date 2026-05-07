@@ -4,7 +4,7 @@ import {
   TENANT_SERVICE_PORT,
   USERS_SERVICE_PORT,
   LICENSE_SERVICE_PORT,
-} from '@org/shared';
+} from '@arc/shared';
 import { AdminTenantsController } from './tenants.controller';
 import { AdminTenantsService } from './tenants.service';
 

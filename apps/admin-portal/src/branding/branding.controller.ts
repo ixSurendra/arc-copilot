@@ -11,7 +11,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { TenantAdminGuard, TenantScopeInterceptor, UpsertTenantBrandingDto } from '@org/shared';
+import { TenantAdminGuard, TenantScopeInterceptor, UpsertTenantBrandingDto } from '@arc/shared';
 import { AdminBrandingService } from './branding.service';
 
 @ApiTags('Admin Branding')

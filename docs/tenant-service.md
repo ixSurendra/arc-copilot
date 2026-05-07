@@ -11,10 +11,10 @@ The tenant service manages tenant lifecycle, subscription plans, billing records
 | TCP (RPC)  | `0.0.0.0`             | `3003` |
 | HTTP       | `http://localhost`    | `4003` |
 
-The constants are exported from `@org/shared`:
+The constants are exported from `@arc/shared`:
 
 ```ts
-import { TENANT_SERVICE_PORT, TENANT_SERVICE_HTTP_PORT } from '@org/shared';
+import { TENANT_SERVICE_PORT, TENANT_SERVICE_HTTP_PORT } from '@arc/shared';
 ```
 
 ---
@@ -134,7 +134,7 @@ Supported notification types: `WELCOME`, `PASSWORD_RESET`, `PASSWORD_CHANGED`
 
 ---
 
-## Imports from `@org/shared`
+## Imports from `@arc/shared`
 
 ```ts
 import {
@@ -162,7 +162,7 @@ import {
   // Constants
   TENANT_SERVICE_PORT,
   TENANT_SERVICE_HTTP_PORT,
-} from '@org/shared';
+} from '@arc/shared';
 ```
 
 ---
