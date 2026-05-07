@@ -322,7 +322,7 @@ async function main() {
     );
 
     // ── 4. Super Admin user ─────────────────────────────────────
-    const userId = await ensureSuperAdminUser(
+    const { userId, created: userWasCreated } = await ensureSuperAdminUser(
       client,
       SYSTEM_TENANT_ID,
       adminEmail,
@@ -343,7 +343,10 @@ async function main() {
     console.log("\n✓ arc-copilot seed complete.\n");
 
     // ── Print credentials banner ────────────────────────────────
-    if (passwordIsRandom) {
+    // Only on first creation AND only when no explicit env override —
+    // re-runs against an existing super admin must NOT print a fake
+    // password the operator might mistake for the real one.
+    if (userWasCreated && passwordIsRandom) {
       const banner = "═".repeat(64);
       console.log(banner);
       console.log("  SUPER ADMIN CREDENTIALS — printed once, save them now");
@@ -355,6 +358,10 @@ async function main() {
       console.log("  print the password again on subsequent runs.");
       console.log(banner);
       console.log("");
+    } else if (!userWasCreated) {
+      console.log(
+        "  (super admin already existed — credentials unchanged, no banner printed)\n",
+      );
     }
   } catch (err) {
     await client.query("ROLLBACK");
@@ -451,11 +458,10 @@ async function seedModulePermissions(
       if (!permissionId) continue;
       await client.query(
         `INSERT INTO "MODULE_PERMISSIONS"
-           ("MODULE_ID", "PERMISSION_ID", "STATUS", "CREATED_AT", "UPDATED_AT")
-         VALUES ($1, $2, 'ACTIVE', NOW(), NOW())
+           ("MODULE_ID", "PERMISSION_ID", "STATUS")
+         VALUES ($1, $2, 'ACTIVE')
          ON CONFLICT ("MODULE_ID", "PERMISSION_ID") DO UPDATE
-           SET "STATUS" = 'ACTIVE',
-               "UPDATED_AT" = NOW()`,
+           SET "STATUS" = 'ACTIVE'`,
         [moduleId, permissionId],
       );
       count++;
@@ -495,14 +501,14 @@ async function ensureSuperAdminUser(
   tenantId: number,
   email: string,
   password: string,
-): Promise<number> {
+): Promise<{ userId: number; created: boolean }> {
   const existing = await client.query(
     `SELECT "ID" FROM "USERS" WHERE "TENANT_ID" = $1 AND "EMAIL" = $2`,
     [tenantId, email],
   );
   if (existing.rows.length > 0) {
     log(`user`, `super admin exists (ID=${existing.rows[0].ID}) — password unchanged`);
-    return existing.rows[0].ID;
+    return { userId: existing.rows[0].ID, created: false };
   }
   const insert = await client.query(
     `INSERT INTO "USERS"
@@ -517,13 +523,13 @@ async function ensureSuperAdminUser(
   const hash = await bcrypt.hash(password, 10);
   await client.query(
     `INSERT INTO "USER_CREDENTIALS"
-       ("USER_ID", "AUTH_TYPE", "PASSWORD_HASH", "STATUS",
+       ("USER_ID", "TENANT_ID", "AUTH_TYPE", "PASSWORD_HASH", "STATUS",
         "CREATED_AT", "UPDATED_AT")
-     VALUES ($1, 'PASSWORD', $2, 'ACTIVE', NOW(), NOW())`,
-    [userId, hash],
+     VALUES ($1, $2, 'PASSWORD', $3, 'ACTIVE', NOW(), NOW())`,
+    [userId, tenantId, hash],
   );
   log(`user`, `created super admin ID=${userId} email=${email}`);
-  return userId;
+  return { userId, created: true };
 }
 
 async function ensureUserRoleAssignment(
@@ -532,8 +538,8 @@ async function ensureUserRoleAssignment(
   roleId: number,
 ): Promise<void> {
   await client.query(
-    `INSERT INTO "USER_ROLES" ("USER_ID", "ROLE_ID", "CREATED_AT")
-     VALUES ($1, $2, NOW())
+    `INSERT INTO "USER_ROLES" ("USER_ID", "ROLE_ID")
+     VALUES ($1, $2)
      ON CONFLICT ("USER_ID", "ROLE_ID") DO NOTHING`,
     [userId, roleId],
   );
@@ -572,7 +578,7 @@ async function seedPlans(
   const out = new Map<string, number>();
   for (const p of PLANS) {
     const r = await client.query(
-      `INSERT INTO "PLANS"
+      `INSERT INTO "PLAN"
          ("PLAN_NAME", "DESCRIPTION", "STATUS", "CREATED_AT", "UPDATED_AT")
        VALUES ($1, $2, 'ACTIVE', NOW(), NOW())
        ON CONFLICT ("PLAN_NAME") DO UPDATE
